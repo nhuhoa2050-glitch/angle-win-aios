@@ -126,6 +126,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
     <span id="ws-product" style="font-size:12px;color:var(--muted);"></span>
   </div>
   <div style="display:flex;gap:6px;">
+    <button onclick="openStatusModal()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'"><span id="status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#64748b;margin-right:5px;vertical-align:middle;"></span>Trạng thái</button>
     <button onclick="showWSModal()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Đổi Team ↕</button>
     <button onclick="showAdminView()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">📊 Admin</button>
   </div>
@@ -977,12 +978,12 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <label style="margin:0;">Nội dung Landing / Tài liệu chi tiết (tuỳ chọn)</label>
         <div style="display:flex;gap:6px;">
-          <input type="file" id="profile-file" accept=".txt,.md,.csv,.json,.pdf" style="display:none;" onchange="handleProfileFile(this)">
+          <input type="file" id="profile-file" accept=".txt,.md,.csv,.json,.pdf,.docx" style="display:none;" onchange="handleProfileFile(this)">
           <button class="btn btn-ghost btn-sm" onclick="document.getElementById('profile-file').click()"><i class="fa fa-file-arrow-up"></i> Tải file</button>
           <button class="btn btn-purple btn-sm" onclick="analyzeProfileFile(this)"><i class="fa fa-wand-magic-sparkles"></i> AI điền hồ sơ từ nội dung</button>
         </div>
       </div>
-      <textarea id="profile-content" rows="4" placeholder="Copy nội dung, hoặc Tải file (.txt .md .csv .json .pdf) để AI học sâu hơn..."></textarea>
+      <textarea id="profile-content" rows="4" placeholder="Copy nội dung, hoặc Tải file (.txt .md .csv .json .pdf .docx) → AIOS tự đọc & AI tách thông tin..."></textarea>
       <div id="profile-file-status" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -1035,6 +1036,15 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <div style="margin-bottom:6px;">Tạo 1 bookmark mới, dán đoạn dưới vào ô URL (đặt tên "Shopee→AIOS"). Mở trang SP Shopee → bấm bookmark → copy review → quay lại đây dán.</div>
       <textarea id="bookmarklet-code" rows="4" readonly style="font-family:monospace;font-size:10px;" onclick="this.select()">javascript:(async()=&gt;{var m=location.href.match(/i\.(\d+)\.(\d+)/);if(!m){alert("Mo dung trang san pham Shopee");return}var shop=m[1],item=m[2],all=[],off=0;try{while(off&lt;80){var r=await fetch("/api/v4/item/get_ratings?filter=0&amp;flag=1&amp;itemid="+item+"&amp;limit=20&amp;offset="+off+"&amp;shopid="+shop+"&amp;type=0",{credentials:"include"});var j=await r.json();var it=(j&amp;&amp;j.data&amp;&amp;j.data.ratings)||[];if(!it.length)break;it.forEach(function(x){if(x.comment&amp;&amp;x.comment.trim())all.push({text:x.comment.trim(),star:x.rating_star,author:x.author_username||""})});off+=20}}catch(e){alert("Loi: "+e.message);return}if(!all.length){alert("Khong co review/doi API");return}var p=JSON.stringify({shopid:shop,itemid:item,url:location.href,reviews:all});function d(n){alert("Da copy "+n+" review. Sang AIOS dan vao o Dan review Shopee.")}try{await navigator.clipboard.writeText(p);d(all.length)}catch(e){var t=document.createElement("textarea");t.value=p;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();d(all.length)}})();</textarea>
     </div>
+  </div>
+</div>
+
+<div id="modal-status" class="modal-overlay hidden">
+  <div class="modal" style="width:580px;max-width:94vw;">
+    <div class="modal-header"><div class="modal-title"><i class="fa fa-heart-pulse" style="color:var(--cyan);"></i> Trạng thái hệ thống</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-status')">✕</button></div>
+    <div class="alert alert-info" style="margin-bottom:12px;font-size:12px;"><i class="fa fa-info-circle"></i> Cho biết AI / n8n / scraper / hub đang nối gì — để bạn luôn biết kết quả là <b>thật</b> hay <b>mock</b>.</div>
+    <div id="status-body" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button class="btn btn-primary" onclick="runSystemCheck()" style="width:100%;margin-top:14px;"><i class="fa fa-rotate"></i> Kiểm tra lại</button>
   </div>
 </div>
 
@@ -2199,6 +2209,52 @@ async function aiosLLM(system, user, maxTokens){ return llmCall(system, user, ma
 // AI có sẵn không? = có browser key HOẶC có n8n webhook (Gemini đang sống)
 function aiAvailable(){ return !!getLLMSettings().key || !!(window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl); }
 
+// ---- Trạng thái hệ thống ----
+function _statusRow(label,state,detail){
+  const map={ok:['badge-success','OK'],warn:['badge-warn','Cảnh báo'],bad:['badge-danger','Offline'],check:['badge-muted','...']};
+  const[c,t]=map[state]||map.check;
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+    <div style="flex:1;"><div style="font-weight:700;font-size:13px;">${label}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(detail||'')}</div></div>
+    <span class="badge ${c}" style="white-space:nowrap;">${t}</span></div>`;
+}
+function setStatusDot(c){ const d=document.getElementById('status-dot'); if(d)d.style.background=c; }
+function updateStatusDot(){ setStatusDot(aiAvailable()?'#4ade80':'#64748b'); }
+function openStatusModal(){ openModal('modal-status'); runSystemCheck(); }
+async function _pingJSON(url,b){ try{ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}); const j=await r.json().catch(()=>null); return {ok:r.ok,status:r.status,j}; }catch(e){ return {ok:false,err:e.message}; } }
+async function runSystemCheck(){
+  const body=document.getElementById('status-body'); if(!body) return;
+  body.innerHTML=['Mô hình AI','Gemini qua n8n','Scraper Shopee','AIOS Hub','Auto-fallback'].map(l=>_statusRow(l,'check','Đang kiểm tra...')).join('');
+  const s=getLLMSettings(); const N8N=window.AIOS_CONFIG&&window.AIOS_CONFIG.n8nUrl;
+  const saved=['gemini','groq','openrouter','openai','anthropic'].filter(k=>(s.keys||{})[k]);
+  let aiBrowserOk=false, n8nOk=false;
+  const rows=[];
+  // 1. model trình duyệt
+  if(s.key){
+    try{ await LLM_PROVIDERS[s.provider].call(s.key,s.model,'Trả lời 1 từ.','Nói OK',10); aiBrowserOk=true;
+      rows.push(_statusRow('Mô hình AI (trình duyệt)','ok',LLM_PROVIDERS[s.provider].label.split(' (')[0].split(' —')[0]+' · '+s.model)); }
+    catch(e){ rows.push(_statusRow('Mô hình AI (trình duyệt)','bad','Key lỗi ('+e.message+') — sẽ fallback')); }
+  } else rows.push(_statusRow('Mô hình AI (trình duyệt)','warn','Chưa dán key — chạy bằng Gemini qua n8n'));
+  // 2. n8n gemini
+  if(N8N){ const p=await _pingJSON(N8N+(window.AIOS_CONFIG.analyticsChat||'/webhook/aios-analytics-chat'),{question:'ping',probe:true});
+    if(p.ok&&p.j){ n8nOk=true; rows.push(_statusRow('Gemini qua n8n','ok','Model: '+(p.j.model||'?')+' — AI chạy THẬT, không cần key')); }
+    else rows.push(_statusRow('Gemini qua n8n','bad','Không phản hồi ('+(p.status||p.err||'?')+')')); }
+  else rows.push(_statusRow('Gemini qua n8n','warn','Chưa cấu hình n8n'));
+  // 3. scraper
+  if(N8N){ const p=await _pingJSON(N8N+'/webhook/aios-research-scrape',{urls:[],probe:true});
+    rows.push(p.ok?_statusRow('Scraper Shopee (n8n)','ok','Webhook active. Cào Shopee dùng bookmarklet (Firecrawl bị chặn).')
+      :_statusRow('Scraper Shopee (n8n)','bad','Webhook không phản hồi')); }
+  else rows.push(_statusRow('Scraper Shopee (n8n)','warn','Chưa có n8n — dùng bookmarklet dán tay'));
+  // 4. hub
+  try{ const r=await fetch((typeof AIOS!=='undefined'?AIOS.base:'')+'/api/health',{cache:'no-store'}); const j=await r.json();
+    rows.push(_statusRow('AIOS Hub (backend)', j.mode==='mock'?'warn':'ok','mode: '+(j.mode||'?')+(j.mode==='mock'?' — angle backend là MOCK (cần .env+key để thật)':''))); }
+  catch(e){ rows.push(_statusRow('AIOS Hub (backend)','warn','Offline — app chạy bằng localStorage (bình thường nếu không bật server)')); }
+  // 5. fallback chain
+  rows.push(_statusRow('Auto-fallback (model free)', saved.length>=2?'ok':'warn',
+    saved.length? saved.map(k=>LLM_PROVIDERS[k].label.split(' (')[0].split(' —')[0]).join(' → ') : 'Chưa lưu key trình duyệt nào (vẫn chạy qua n8n)'));
+  body.innerHTML=rows.join('');
+  setStatusDot((aiBrowserOk||n8nOk)?'#4ade80':(N8N?'#facc15':'#64748b'));
+}
+
 // ---- Modal chọn model ----
 function updateLLMLabel(){ const el=document.getElementById('llm-active-label'); if(el)el.textContent=llmActiveLabel(); }
 function openLLMModal(){
@@ -2316,6 +2372,24 @@ async function _readPdf(file){
   }
   return out;
 }
+let _mammothLoaded=null;
+function _loadMammoth(){
+  if(_mammothLoaded) return _mammothLoaded;
+  _mammothLoaded=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+    s.onload=()=>window.mammoth?resolve(window.mammoth):reject(new Error('mammoth lỗi'));
+    s.onerror=()=>reject(new Error('Không tải được mammoth.js (cần internet)'));
+    document.head.appendChild(s);
+  });
+  return _mammothLoaded;
+}
+async function _readDocx(file){
+  const lib=await _loadMammoth();
+  const buf=await file.arrayBuffer();
+  const res=await lib.extractRawText({arrayBuffer:buf});
+  return res.value||'';
+}
 async function handleProfileFile(input){
   const file=input.files&&input.files[0]; if(!file) return;
   const status=document.getElementById('profile-file-status');
@@ -2323,9 +2397,12 @@ async function handleProfileFile(input){
   status.textContent='Đang đọc '+file.name+'...';
   try{
     const ext=(file.name.split('.').pop()||'').toLowerCase();
-    let text = (ext==='pdf') ? await _readPdf(file) : await file.text();
+    let text;
+    if(ext==='pdf') text=await _readPdf(file);
+    else if(ext==='docx') text=await _readDocx(file);
+    else text=await file.text();
     text=(text||'').trim();
-    if(!text){ status.textContent='⚠ Không trích được text (PDF có thể là ảnh scan).'; return; }
+    if(!text){ status.textContent='⚠ Không trích được text (PDF/ảnh scan hoặc file rỗng).'; return; }
     ta.value=(ta.value.trim()? ta.value.trim()+'\n\n':'')+text;
     status.innerHTML=`✅ Đã nạp <b>${esc(file.name)}</b> (${text.length.toLocaleString('vi-VN')} ký tự). Bấm "AI điền hồ sơ" để tự tách Tên/USP/Tệp khách.`;
   }catch(e){ status.textContent='Lỗi đọc file: '+e.message; }
@@ -4381,6 +4458,7 @@ function approveVariant(id){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  try{ updateStatusDot(); }catch(e){}
   // Check for previously selected workspace in sessionStorage
   const prevWsId=sessionStorage.getItem('aios_current_ws');
   const wsList=getWorkspaces();
