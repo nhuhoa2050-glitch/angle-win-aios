@@ -4257,49 +4257,51 @@ function researchRun(){
 
 // (researchShopee bản cũ đã bỏ — dùng bản URL-Manager ở cuối file)
 
-function researchAI(){
+async function researchAI(){
   const query = document.getElementById('rs-product-query').value.trim();
   if(!query){alert('Vui lòng nhập tên sản phẩm hoặc niche');return;}
 
   const checkboxes = document.querySelectorAll('#rs-angle-chips input[type=checkbox]:checked');
   const angles = Array.from(checkboxes).map(c=>c.value);
-  const model = document.getElementById('rs-ai-model').value;
-  const lang = document.getElementById('rs-lang').value;
+  const lang = document.getElementById('rs-lang')?.value || 'Tiếng Việt';
 
-  const btn = event.target;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> AI đang nghiên cứu...';
-
-  const n8nWebhook = (window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl)
-    ? window.AIOS_CONFIG.n8nUrl + '/webhook/aios-analytics-chat'
-    : null;
-
-  const payload = { query, angles, model, lang, workspace_id: currentWS?.id || 'default' };
-
-  if(n8nWebhook){
-    fetch(n8nWebhook, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    })
-    .then(r=>r.json())
-    .then(data=>{
-      researchRenderResults(data.pains || [], 'AI Research: '+query, query);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    })
-    .catch(()=>{
-      researchRenderDemo('ai', [query]);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    });
-  } else {
-    setTimeout(()=>{
-      researchRenderDemo('ai', [query]);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    }, 2000);
+  const urls = (typeof urlMgrGetAllUrls==='function') ? urlMgrGetAllUrls() : [];
+  // Có link + có scraper → khuyến nghị cào thật, KHÔNG để AI bịa thay link
+  if(urls.length){
+    const hasScraper = !!(window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl) || !!(window.AIOS_CONFIG && window.AIOS_CONFIG.firecrawlKey);
+    if(hasScraper){
+      if(confirm('Bạn có link sản phẩm. Cào DỮ LIỆU THẬT từ link (khuyến nghị) thay vì để AI suy luận?\n\nOK = Cào thật · Cancel = AI suy luận từ tên SP')){
+        return researchShopee();
+      }
+    } else {
+      alert('⚠ Trình duyệt KHÔNG cào trực tiếp Shopee được (CORS/chống bot). Kết quả dưới đây chỉ là AI SUY LUẬN từ tên sản phẩm, không phải data từ link.\n\nĐể cào thật: cấu hình n8n scrape webhook hoặc Firecrawl key.');
+    }
   }
+
+  const btn = event?.target || document.querySelector('[onclick="researchAI()"]');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> AI đang suy luận...'; }
+  const reset=()=>{ if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa fa-brain"></i> AI Research + Phân tích'; } };
+
+  try{
+    if(getLLMSettings().key){
+      const prof = S.productProfile||{};
+      const sys = `Bạn là chuyên gia insight TikTok Shop. Từ tên sản phẩm/niche, SUY LUẬN (không phải số liệu thật) các pain point khách thường gặp. Ngôn ngữ: ${lang}. Góc tập trung: ${angles.join(', ')||'pain points'}.
+Trả về DUY NHẤT JSON: {"pains":[{"pain_text":"...","category":"skin|other","frequency":1-10,"urgency":1-5,"keywords":["..."]}]}
+${RBL_KB_PROMPT}`;
+      const usr = `Sản phẩm/niche: ${query}\nHồ sơ SP: ${JSON.stringify({name:prof.name,audience:prof.audience,usp:prof.usp})}\nĐề xuất 6-8 pain.`;
+      const out = await aiosLLM(sys, usr, 2000);
+      const parsed = out ? parseJSONLoose(out) : null;
+      if(parsed?.pains?.length){
+        researchRenderResults(parsed.pains, 'AI suy luận: '+query, query, {kind:'ai', model:llmActiveLabel()});
+      } else {
+        researchRenderDemo('ai', [query]); // không parse được → demo (banner đỏ)
+      }
+    } else {
+      researchRenderDemo('ai', [query]); // chưa kết nối model → demo (banner đỏ)
+    }
+  }catch(e){
+    alert('Lỗi AI: '+(e.message||e)); researchRenderDemo('ai',[query]);
+  }finally{ reset(); }
 }
 
 function researchRenderDemo(type, sources){
@@ -4313,20 +4315,28 @@ function researchRenderDemo(type, sources){
     { pain_text:'Mùi hương quá nồng khiến bị đau đầu, đặc biệt lúc sáng sớm', category:'other', frequency:5, urgency:2, keywords:['mùi nồng','đau đầu','khó chịu'], selected:false },
     { pain_text:'Da vẫn khô sau khi dùng, không đủ ẩm cho ban đêm', category:'skin', frequency:8, urgency:4, keywords:['da khô','thiếu ẩm','ban đêm'], selected:true },
   ];
-  researchRenderResults(demoPains, (type==='shopee'?'Shopee Reviews':'AI Research')+': '+srcText, srcText);
+  researchRenderResults(demoPains, (type==='shopee'?'Shopee Reviews':'AI Research')+': '+srcText, srcText, {kind:'demo'});
 }
 
-function researchRenderResults(pains, source, query){
+function researchRenderResults(pains, source, query, mode){
   const area = document.getElementById('research-results-area');
   const list = document.getElementById('research-results-list');
   area.style.display = 'block';
 
+  // Banner nguồn — TRUNG THỰC: phân biệt cào thật / AI suy luận / dữ liệu mẫu
+  let banner='';
+  if(mode){
+    if(mode.kind==='scraped') banner=`<div class="alert alert-info" style="border-color:var(--green);margin-bottom:12px;"><i class="fa fa-circle-check" style="color:var(--green);"></i> <b>Cào thật</b> từ ${esc(mode.detail||'link')}${mode.model?` · phân tích bằng ${esc(mode.model)}`:''}.</div>`;
+    else if(mode.kind==='ai') banner=`<div class="alert alert-info" style="border-color:var(--yellow);margin-bottom:12px;"><i class="fa fa-triangle-exclamation" style="color:var(--yellow);"></i> <b>AI suy luận từ tên sản phẩm — CHƯA cào link thật</b> (${esc(mode.model||'AI')}). Đây là giả thuyết để tham khảo. Muốn data thật: cấu hình Firecrawl/n8n rồi bấm <b>Chạy Scrape</b>.</div>`;
+    else if(mode.kind==='demo') banner=`<div class="alert alert-info" style="border-color:var(--red);margin-bottom:12px;"><i class="fa fa-flask" style="color:var(--red);"></i> <b>DỮ LIỆU MẪU (DEMO)</b> — KHÔNG phải dữ liệu thật, chỉ minh hoạ giao diện. Kết nối Mô hình AI (nút trên Approval Queue) hoặc n8n scrape để dùng thật.</div>`;
+  }
+
   if(!pains.length){
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;">Không tìm thấy pain points. Thử nguồn khác.</div>';
+    list.innerHTML = banner+'<div style="text-align:center;color:var(--muted);padding:24px;">Không tìm thấy pain points. Thử nguồn khác / kiểm tra link.</div>';
     return;
   }
 
-  list.innerHTML = pains.map((p,i)=>`
+  list.innerHTML = banner + pains.map((p,i)=>`
     <div class="card" style="padding:14px;" id="rp-${i}">
       <div style="display:flex;align-items:flex-start;gap:12px;">
         <input type="checkbox" id="rp-chk-${i}" ${p.selected!==false?'checked':''} style="width:auto;margin-top:3px;">
@@ -4813,9 +4823,15 @@ function researchShopee() {
   .then(data => {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Chạy Scrape Ngay'; }
     if (data.ok) {
-      // Show success + pull demo results for UI
-      researchRenderDemo('shopee', urls.map(u => u.url));
-      alert(`✅ Scrape xong! ${data.pains_found || '?'} pain mới đã được extract.`);
+      // Render PAIN THẬT trả về từ scraper (không còn demo)
+      const realPains = data.pains || data.results || [];
+      if(realPains.length){
+        researchRenderResults(realPains, 'Firecrawl Shopee', urls.map(u=>u.label).join(', '),
+          {kind:'scraped', detail:`${urls.length} link Shopee`, model:llmActiveLabel()});
+      } else {
+        researchRenderResults([], 'Firecrawl Shopee', '', {kind:'scraped', detail:`${urls.length} link`});
+      }
+      alert(`✅ Scrape xong! ${data.pains_found || realPains.length || '?'} pain extract từ link thật.`);
       // Save to history
       if (!S.researchHistory) S.researchHistory = [];
       S.researchHistory.unshift({
@@ -4832,9 +4848,10 @@ function researchShopee() {
   })
   .catch(err => {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Chạy Scrape Ngay'; }
-    // Demo mode fallback
+    // TRUNG THỰC: scraper offline → KHÔNG giả vờ có data. Báo rõ + để demo có banner đỏ.
+    console.warn('n8n scrape offline:', err.message);
+    alert('⚠ Không kết nối được scraper (n8n offline hoặc lỗi mạng): '+err.message+'\n\nChưa cào được link thật. Kết quả hiển thị bên dưới chỉ là DỮ LIỆU MẪU.');
     researchRenderDemo('shopee', urls.map(u => u.url));
-    console.warn('n8n offline, demo mode:', err.message);
   });
 }
 
