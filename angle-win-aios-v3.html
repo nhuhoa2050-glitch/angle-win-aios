@@ -139,6 +139,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   </div>
   <div class="sidebar-section">Pipeline</div>
   <div class="nav-item active" onclick="showTab('overview')"><i class="fa fa-home fa-fw"></i> Tổng Quan</div>
+  <div class="nav-item" onclick="showTab('flow')"><i class="fa fa-diagram-project fa-fw"></i> Sơ Đồ Vận Hành</div>
   <div class="nav-item" onclick="showTab('approval')"><i class="fa fa-bell fa-fw"></i> Approval Queue <span class="nav-badge red" id="badge-approval">0</span></div>
   <div class="nav-item" onclick="showTab('b1')"><i class="fa fa-satellite-dish fa-fw"></i> B1 — Sensors <span class="nav-badge" id="badge-b1">0</span></div>
   <div class="nav-item" onclick="showTab('b2')"><i class="fa fa-flask fa-fw"></i> B2 — AI Factory</div>
@@ -317,6 +318,19 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Pain Text</th><th>Nguồn</th><th>Persona</th><th>Priority</th><th>Lần dùng</th><th>Action</th></tr></thead>
     <tbody id="pain-tbody"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px;">Pain Bank trống — thêm pain hoặc Sync</td></tr></tbody></table></div>
   </div>
+</div>
+
+<!-- ===== SƠ ĐỒ VẬN HÀNH ===== -->
+<div id="tab-flow" class="tab">
+  <div class="page-header">
+    <div class="page-title">Sơ Đồ <span>Vận Hành</span></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openStatusModal()"><i class="fa fa-heart-pulse"></i> Trạng thái</button>
+      <button class="btn btn-primary btn-sm" onclick="runFullPipeline()"><i class="fa fa-bolt"></i> Chạy 1 chạm</button>
+    </div>
+  </div>
+  <div class="alert alert-info"><i class="fa fa-circle-info"></i> Vòng vận hành khép kín: <b>Thu → Lọc → Chế → Duyệt → Chạy → Học</b> rồi quay lại. Số liệu cập nhật từ workspace hiện tại. Bấm vào ô để nhảy tới phần đó.</div>
+  <div id="flow-body"></div>
 </div>
 
 <!-- ===== PLAYBOOK RBL ===== -->
@@ -1314,6 +1328,7 @@ function showTab(t){
   currentTab=t;
   if(t==='b1'){renderPainBank();renderMarketIntel();}
   if(t==='playbook')renderPlaybook();
+  if(t==='flow')renderFlow();
   if(t==='b2'){renderB2Table();populatePainSelect();}
   if(t==='b3')renderB3();
   if(t==='b4')renderB4();
@@ -1776,10 +1791,13 @@ const QUEUE_TEMPLATES=[
 function generateQueue(){
   const newQueue=[];
   const pains=S.pains.filter(p=>p.usedCount===0||!p.usedCount);
-  const pool=pains.length?pains:S.pains;
+  let pool=pains.length?pains:S.pains;
   if(!pool.length){alert('Cần thêm pains vào Pain Bank trước');return;}
-  const personas=['Dân văn phòng','Mẹ bỉm sữa','Học sinh - Sinh viên','Người bận rộn','Người tuổi 35+'];
-  const proofs=['Before/After','Testimonial','Demo','Statistics','Challenge'];
+  const bias=_learningBias(); pool=_biasSortPains(pool); // VÒNG HỌC
+  const defP=['Dân văn phòng','Mẹ bỉm sữa','Học sinh - Sinh viên','Người bận rộn','Người tuổi 35+'];
+  const defPr=['Before/After','Testimonial','Demo','Statistics','Challenge'];
+  const personas=bias.winPersonas.length?[...new Set([...bias.winPersonas,...defP])]:defP; // persona thắng lên đầu
+  const proofs=bias.winProofs.length?[...new Set([...bias.winProofs,...defPr])]:defPr;
   for(let i=0;i<5;i++){
     const pain=pool[i%pool.length];
     const persona=personas[i%personas.length];
@@ -2723,6 +2741,45 @@ function showPlaybook(which){
   if(which==='ads')renderPbAds();
 }
 function renderPlaybook(){ showPlaybook('funnel'); } // gọi khi mở tab
+
+// ===== SƠ ĐỒ VẬN HÀNH — vòng khép kín có số liệu thật =====
+function renderFlow(){
+  const el=document.getElementById('flow-body'); if(!el) return;
+  const pains=(S.pains||[]); const highN=pains.filter(p=>p.priority==='high').length;
+  const sources=(S.sheets?.cskh?.length||0)+(S.competitors?.length||0)+(S.researchHistory?.length||0)+(S.intentBank?.length||0);
+  const pending=(S.approvalQueue||[]).filter(q=>q.status==='pending').length;
+  const testing=(S.angles||[]).filter(a=>a.status==='testing').length;
+  const b=_learningBias();
+  const aiLabel=llmActiveLabel();
+  const prof=S.productProfile||{};
+  const box=(opts)=>`<div onclick="${opts.go?`showTab('${opts.go}')`:''}" style="border:1px solid ${opts.color||'var(--border)'};border-left:4px solid ${opts.color||'var(--cyan)'};border-radius:10px;padding:12px 16px;background:var(--card);${opts.go?'cursor:pointer;':''}display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div><div style="font-weight:700;font-size:14px;">${opts.icon||''} ${opts.title}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${opts.sub||''}</div></div>
+    <div style="text-align:right;white-space:nowrap;">${opts.metric||''}</div></div>`;
+  const arrow=(label)=>`<div style="text-align:center;color:var(--muted);font-size:11px;padding:3px 0;">▼ ${label||''}</div>`;
+  const big=(n,c)=>`<span style="font-size:22px;font-weight:700;color:${c||'var(--cyan)'};">${n}</span>`;
+
+  el.innerHTML=`<div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;">
+    ${box({icon:'📥',title:'THU — Nguồn đầu vào',sub:'Shopee (bookmarklet) · CSKH · Research · Đối thủ · Hồ sơ SP',color:'var(--cyan)',metric:big(sources,'var(--cyan)')+'<div style=\"font-size:10px;color:var(--muted)\">mục dữ liệu</div>',go:'sheets'})}
+    ${arrow('AI lọc rác')}
+    ${box({icon:'🧹',title:'LỌC — Phân loại bình luận',sub:'Pain / Intent / Khen / Spam · bằng '+esc(aiLabel),color:'var(--purple)',metric:'',go:'sheets'})}
+    ${arrow('')}
+    ${box({icon:'🧠',title:'B1 — PAIN BANK',sub:'Kho nỗi đau · lọc theo Hồ sơ SP'+(prof.name?(': '+esc(prof.name)):' (chưa có hồ sơ)')+' + RBL',color:'var(--orange)',metric:big(pains.length,'var(--orange)')+` <span style="font-size:11px;color:var(--red)">(${highN} cao)</span>`,go:'b1'})}
+    ${arrow('AI tạo angle · '+esc(aiLabel))}
+    ${box({icon:'⚙️',title:'CHẾ — AI Factory',sub:'Sinh angle bám phễu 6 bước + công thức hook'+(b.winPersonas.length?(' · ưu tiên persona thắng: '+esc(b.winPersonas.slice(0,2).join(', '))):''),color:'var(--purple)',metric:'',go:'b2'})}
+    ${arrow('')}
+    ${box({icon:'✅',title:'DUYỆT — Approval Queue',sub:'CỬA NGƯỜI: Duyệt / Bỏ / Sửa',color:'var(--yellow)',metric:big(pending,'var(--yellow)')+'<div style=\"font-size:10px;color:var(--muted)\">chờ duyệt</div>',go:'approval'})}
+    ${arrow('')}
+    ${box({icon:'🎬',title:'CHẠY — Thực chiến (B3)',sub:'Test KOC · nhập Hook Rate / đơn',color:'var(--cyan)',metric:big(testing,'var(--cyan)')+'<div style=\"font-size:10px;color:var(--muted)\">đang test</div>',go:'b3'})}
+    ${arrow('')}
+    ${box({icon:'🏆',title:'HỌC — Kết quả & Vòng lặp',sub:'WIN/FLOP → tự ưu tiên cái thắng cho lần tạo sau',color:'var(--green)',metric:`<span style="color:var(--green);font-weight:700">${b.wins} WIN</span> / <span style="color:var(--red)">${b.flops} FLOP</span><div style="font-size:11px;color:var(--muted)">win rate ${b.winRate??'—'}%</div>`,go:'realtime'})}
+    <div style="border:1px dashed var(--green);border-radius:10px;margin-top:8px;padding:8px 14px;font-size:12px;color:var(--green);text-align:center;">
+      🔁 VÒNG HỌC: ${b.wins||b.flops? ('đã có '+(b.wins+b.flops)+' kết quả → AI ưu tiên '+(b.winPersonas[0]?('persona "'+esc(b.winPersonas[0])+'"'):'cái đang thắng')+' khi tạo angle mới') : 'chưa có WIN/FLOP nào — chạy test ở B3 để hệ thống bắt đầu học'} ↑ quay lại CHẾ
+    </div>
+  </div>
+  <div style="max-width:720px;margin:14px auto 0;font-size:11px;color:var(--muted);text-align:center;">
+    Lớp ngang: 🧠 AI = <b>${esc(aiLabel)}</b> · 🔌 n8n ${window.AIOS_CONFIG?.n8nUrl?'đã nối':'chưa'} · 🖥️ Hub ${(typeof AIOS!=='undefined'&&AIOS.online)?'online':'offline (localStorage)'} · 📚 RBL bơm vào mọi prompt
+  </div>`;
+}
 
 function renderPbFunnel(){
   const el=document.getElementById('pb-funnel'); if(!el)return;
@@ -4408,10 +4465,40 @@ generateQueue = async function(){
 };
 
 // MODULE B+: sinh angle bằng MODEL ĐÃ CHỌN + khung RBL (dùng khi có API key)
+// ===== VÒNG HỌC: rút bias từ kết quả WIN/FLOP thật (S.angles) =====
+function _learningBias(){
+  const A=S.angles||[];
+  const wins=A.filter(a=>a.result==='win'), flops=A.filter(a=>a.result==='flop');
+  const rank=(arr,key)=>{const m={};arr.forEach(a=>{const v=a[key];if(v)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((x,y)=>y[1]-x[1]).map(e=>e[0]);};
+  return {
+    wins:wins.length, flops:flops.length,
+    winRate:(wins.length+flops.length)?Math.round(wins.length/(wins.length+flops.length)*100):null,
+    winPersonas:rank(wins,'p1'), winProofs:rank(wins,'p5'), flopPersonas:rank(flops,'p1'),
+    winPains:wins.map(a=>a.p2).filter(Boolean).slice(0,8)
+  };
+}
+function _learningPromptLine(){
+  const b=_learningBias();
+  if(!b.wins && !b.flops) return '';
+  let s='\n\nHỌC TỪ KẾT QUẢ THỰC TẾ (ưu tiên cao, win rate '+(b.winRate??'?')+'%):';
+  if(b.winPersonas.length) s+=`\n- Persona ĐANG THẮNG (nhân đôi): ${b.winPersonas.slice(0,3).join(', ')}.`;
+  if(b.winProofs.length) s+=`\n- Kiểu bằng chứng đang thắng: ${b.winProofs.slice(0,2).join(', ')}.`;
+  if(b.flopPersonas.length) s+=`\n- Đã FLOP (hạn chế lặp lại): ${b.flopPersonas.slice(0,2).join(', ')}.`;
+  return s;
+}
+function _biasSortPains(pool){
+  const b=_learningBias(); const wp=new Set(b.winPersonas.slice(0,3)); const pr={high:3,medium:2,low:1};
+  return [...pool].sort((a,c)=>{
+    const aw=wp.has(a.persona)?1:0, cw=wp.has(c.persona)?1:0;
+    if(aw!==cw) return cw-aw;
+    return (pr[c.priority]||2)-(pr[a.priority]||2);
+  });
+}
 async function generateQueueLLM(){
   const pains=(S.pains||[]).filter(p=>!p.usedCount);
-  const pool=pains.length?pains:(S.pains||[]);
+  let pool=pains.length?pains:(S.pains||[]);
   if(!pool.length){ alert('Cần thêm pains vào Pain Bank trước'); return; }
+  pool=_biasSortPains(pool); // VÒNG HỌC: pain của persona đang thắng lên đầu
   const btn=document.getElementById('btn-generate');
   const orig=btn?btn.innerHTML:'';
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> AI đang viết angle...'; }
@@ -4424,7 +4511,7 @@ Trả về DUY NHẤT JSON: {"angles":[{"hook":"...","persona":"...","pain":"...
 ${RBL_KB_PROMPT}`;
     const usr=`SẢN PHẨM: ${prof.name||S.product||'(chưa đặt tên)'} | Tệp khách: ${prof.audience||'?'} | USP: ${prof.usp||'?'}
 NỀN TẢNG: ${currentPlatform}
-PAIN BANK:\n${painList}\n\nViết 5 angle, ưu tiên pain priority cao.`;
+PAIN BANK:\n${painList}\n\nViết 5 angle, ưu tiên pain priority cao.${_learningPromptLine()}`;
     const out=await aiosLLM(sys,usr,2200);
     let angles=null; if(out){ const j=parseJSONLoose(out); angles=j?.angles; }
     if(!angles||!angles.length){ setEl('queue-subtitle','Model không trả kết quả — fallback template'); return _localGenerateQueue(); }
