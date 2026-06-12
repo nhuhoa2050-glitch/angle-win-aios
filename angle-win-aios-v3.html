@@ -2627,7 +2627,22 @@ function buildHookManual(){
   const cta=document.getElementById('hk-cta').value.trim();
   if(!id||!pain){ alert('Cần ít nhất Identity và Pain.'); return; }
   const hook=`${id} — và tôi đang ${pain}${tool?`. ${tool}`:''} đã thay đổi điều đó${cta?` → ${cta}`:''}.`;
-  document.getElementById('hk-output').innerHTML=`<div class="alert alert-info"><b>Hook ghép:</b><br>${esc(hook)}</div>`;
+  window._pbHooks=[hook];
+  document.getElementById('hk-output').innerHTML=`<div class="alert alert-info"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><b>Hook ghép:</b><br>${esc(hook)}</div><button class="btn btn-success btn-sm" style="white-space:nowrap;" onclick="pbHookToQueue(0)"><i class="fa fa-plus"></i> Tạo Angle</button></div></div>`;
+}
+// Lưu hook từ Playbook → Approval Queue (tạo angle pending)
+function pbHookToQueue(i){
+  const hook=(window._pbHooks||[])[i]; if(!hook) return;
+  const id=document.getElementById('hk-identity')?.value?.trim()||'';
+  const pain=document.getElementById('hk-pain')?.value?.trim()||'';
+  const cta=document.getElementById('hk-cta')?.value?.trim()||'';
+  S.approvalQueue=S.approvalQueue||[];
+  S.approvalQueue.push({id:uid(),hook:hook.trim(),p1:id,p2:pain.slice(0,80),p3:'',p4:'',p5:'Demo',
+    p6:cta||PLATFORM_CTA[currentPlatform]||'Link trong bio',platform:currentPlatform,
+    qc:7,status:'pending',reason:'',ts:now(),painSource:pain.slice(0,80),sourceTag:'Playbook Hook'});
+  save(); updateBadges(); if(currentTab==='approval') renderQueue();
+  emit('angle.created',{count:1,via:'Playbook Hook'});
+  alert('✅ Đã thêm hook vào Approval Queue. Sang tab Approval Queue để duyệt.');
 }
 async function buildHookAI(btn){
   const id=document.getElementById('hk-identity').value.trim();
@@ -2646,8 +2661,9 @@ async function buildHookAI(btn){
       hooks=RBL_KB.hookTypes.map(t=>`(${t}) ${id} ${pain}${tool?` — ${tool}`:''}${cta?` → ${cta}`:''}`);
       out.innerHTML=`<div class="alert alert-info" style="border-color:var(--yellow);"><i class="fa fa-triangle-exclamation"></i> Offline — mẫu theo công thức (cấu hình API key để AI viết tốt hơn):</div>`;
     } else out.innerHTML='';
-    out.innerHTML+='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Hook</th></tr></thead><tbody>'+
-      hooks.map((h,i)=>`<tr><td>${i+1}</td><td>${esc(h)}</td></tr>`).join('')+'</tbody></table></div>';
+    window._pbHooks=hooks;
+    out.innerHTML+='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Hook</th><th>+</th></tr></thead><tbody>'+
+      hooks.map((h,i)=>`<tr><td>${i+1}</td><td>${esc(h)}</td><td><button class="btn btn-success btn-sm" onclick="pbHookToQueue(${i})" title="Tạo Angle từ hook này"><i class="fa fa-plus"></i></button></td></tr>`).join('')+'</tbody></table></div>';
   }catch(e){ out.innerHTML=`<div class="alert alert-info">Lỗi: ${esc(e.message)}</div>`; }
   finally{ btn.innerHTML=old; btn.disabled=false; }
 }

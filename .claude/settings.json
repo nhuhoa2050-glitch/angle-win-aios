@@ -6,7 +6,12 @@
       "Bash(curl -s http://localhost:8800/api/health)",
       "Bash(curl -s -X POST http://localhost:8800/api/generate -H 'Content-Type: application/json' -d '{\"count\":5}')",
       "Bash(curl -s -X POST http://localhost:8800/win -H 'Content-Type: application/json' -d '{\"angleId\":\"AD-101\",\"hookRate\":\"47\",\"intentComments\":\"22\",\"sales\":\"9\",\"spend\":\"1200000\"}')",
-      "Bash(awk 'NR>=3387 && NR<=3445' angle-win-aios-v3.html)"
+      "Bash(awk 'NR>=3387 && NR<=3445' angle-win-aios-v3.html)",
+      "Bash(node -e ' *)",
+      "Bash(rm -f .git/index.lock)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
