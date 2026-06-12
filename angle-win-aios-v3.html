@@ -371,7 +371,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
         <textarea id="b2-hook" rows="3" placeholder="AI sẽ tạo hook dựa trên 6P..."></textarea>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" onclick="aiGenerateHook()"><i class="fa fa-robot"></i> AI Tạo Hook</button>
+        <button class="btn btn-ghost" onclick="aiGenerateHook(this)"><i class="fa fa-robot"></i> AI Tạo Hook</button>
         <button class="btn btn-success" onclick="saveAngle()"><i class="fa fa-save"></i> Lưu Angle</button>
       </div>
     </div>
@@ -504,8 +504,8 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   </div>
   <div id="sheet-cskh">
     <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <button class="btn btn-success btn-sm" onclick="extractPainsFromCSKH()"><i class="fa fa-brain"></i> Extract All Pains → Bank</button>
-      <span style="font-size:12px;color:var(--muted);align-self:center;">Tip: Paste nội dung chat vào cột "Nội dung", AI tự extract pain</span>
+      <button class="btn btn-success btn-sm" onclick="classifyAndRouteComments()"><i class="fa fa-filter"></i> Lọc &amp; Phân loại Bình luận</button>
+      <span style="font-size:12px;color:var(--muted);align-self:center;">Paste comment thô vào cột "Nội dung" → AI phân loại Pain / Intent / Khen / Spam và route đúng nơi</span>
     </div>
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Ngày</th><th>Kênh</th><th>Nội dung tin nhắn</th><th>Pain trích xuất</th><th>Tags</th><th>Status</th><th>Action</th></tr></thead>
     <tbody id="tbody-cskh"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:20px;">Chưa có dữ liệu</td></tr></tbody></table></div>
@@ -1462,17 +1462,35 @@ const HOOK_TEMPLATES=[
   (p)=>`Tôi từng bị ${p.p2}, thử ${p.p5} và ${p.p4} — kể bạn nghe`,
 ];
 
-function aiGenerateHook(){
-  const p1=document.getElementById('b2-p1')?.value||'';
-  const p2=document.getElementById('b2-p2')?.value||'chưa điền pain';
-  const p3=document.getElementById('b2-p3')?.value||'lúc bận rộn';
-  const p4=document.getElementById('b2-p4')?.value||'nhanh chóng';
-  const p5=document.getElementById('b2-p5')?.value||'Demo';
-  const p6=document.getElementById('b2-p6')?.value||'link trong bio';
+function _hookTemplate(p){
+  const p1=p.p1||'Bạn', p3=p.p3||'lúc bận rộn', p4=p.p4||'giải quyết nhanh';
   const tmpl=HOOK_TEMPLATES[Math.floor(Math.random()*HOOK_TEMPLATES.length)];
-  const hook=tmpl({p1,p2,p3,p4,p5,p6});
-  document.getElementById('b2-hook').value=hook;
+  return tmpl({p1,p2:p.p2,p3,p4,p5:p.p5||'Demo',p6:p.p6||'link trong bio'});
+}
+async function aiGenerateHook(btn){
+  const p1=document.getElementById('b2-p1')?.value||'';
+  const p2=(document.getElementById('b2-p2')?.value||'').trim();
+  const p3=(document.getElementById('b2-p3')?.value||'').trim();
+  const p4=(document.getElementById('b2-p4')?.value||'').trim();
+  const p5=document.getElementById('b2-p5')?.value||'Demo';
+  const p6=(document.getElementById('b2-p6')?.value||'').trim();
+  if(!p2){ alert('Hãy điền P2 — Pain Point trước khi tạo hook (đây là phần quan trọng nhất).'); return false; }
+  const hookEl=document.getElementById('b2-hook');
+  const ctx={p1,p2,p3,p4,p5,p6};
+  if(getLLMSettings().key){
+    const old=btn?btn.innerHTML:''; if(btn){btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang viết...';btn.disabled=true;}
+    try{
+      const sys=`Bạn là copywriter TikTok Shop. Viết 1 hook (0-3 giây) bám công thức ${RBL_KB.hookFormula}, chạm đúng nỗi đau, tự nhiên, KHÔNG sáo rỗng, KHÔNG để placeholder. Chỉ trả về DUY NHẤT 1 dòng hook.\n${RBL_KB_PROMPT}`;
+      const usr=`Persona: ${p1||'(chưa rõ)'}\nPain: ${p2}\nThời điểm/bối cảnh: ${p3||'(tuỳ)'}\nLợi ích: ${p4||'(tuỳ)'}\nProof: ${p5}\nCTA: ${p6||'(tuỳ)'}`;
+      const out=await aiosLLM(sys,usr,200);
+      hookEl.value=((out||'').trim().split('\n')[0].replace(/^["“”']|["“”']$/g,'')) || _hookTemplate(ctx);
+    }catch(e){ hookEl.value=_hookTemplate(ctx); }
+    finally{ if(btn){btn.innerHTML=old;btn.disabled=false;} }
+  } else {
+    hookEl.value=_hookTemplate(ctx);
+  }
   updateB2Preview();
+  return true;
 }
 
 function updateB2Preview(){
@@ -1522,7 +1540,7 @@ function renderQCChecklist(qc){
     </div>`).join('');
 }
 
-function generateAngle(){aiGenerateHook();saveAngle();}
+async function generateAngle(){ const ok=await aiGenerateHook(); if(ok!==false && document.getElementById('b2-hook').value.trim()) saveAngle(); }
 
 function saveAngle(){
   const hook=document.getElementById('b2-hook')?.value?.trim();
@@ -1898,7 +1916,7 @@ function renderCSKH(){
     <td><input value="${esc(r.pain)}" style="width:140px;padding:3px 6px;font-size:12px;" placeholder="Pain extract..." onchange="updateSheetField('cskh','${r.id}','pain',this.value)"></td>
     <td><input value="${esc(r.tags)}" style="width:80px;padding:3px 6px;font-size:12px;" placeholder="#tag" onchange="updateSheetField('cskh','${r.id}','tags',this.value)"></td>
     <td><select style="width:100px;padding:3px 6px;font-size:12px;" onchange="updateSheetField('cskh','${r.id}','status',this.value)">
-      ${['New','Processed','Added to Bank'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
+      ${['New','Processed','Added to Bank','Intent/Sale','Praise','Spam/Bỏ'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
     </select></td>
     <td><button class="btn btn-danger btn-sm" onclick="deleteRow('cskh','${r.id}')"><i class="fa fa-trash"></i></button></td>
   </tr>`).join('');
@@ -1966,16 +1984,62 @@ function updateSheetField(sheet,id,field,value){
   save();updateBadges();
 }
 
-function extractPainsFromCSKH(){
-  let added=0;
-  S.sheets.cskh.forEach(r=>{
-    if(r.pain&&r.pain.trim()&&!S.pains.find(p=>p.text===r.pain.trim())){
-      S.pains.push({id:uid(),text:r.pain.trim(),persona:'Chưa phân loại',priority:'medium',source:'CSKH Sheet',date:today(),usedCount:0});
-      r.status='Added to Bank';added++;
-    }
+// Phân loại + định tuyến bình luận thô (pain → Bank, intent → Sale, praise → social proof, spam → bỏ)
+const INTENT_KW=['mua ở đâu','mua o dau','giá','gia bao','bao nhiêu','bao nhieu','ship','inbox','ib ','order','đặt hàng','dat hang','còn hàng','con hang','sđt','sdt','số đt','mua ntn','mua như nào','link mua','cách mua'];
+const PRAISE_KW=['đẹp quá','dep qua','tốt quá','tot qua','quá ok','quá ưng','tuyệt vời','tuyet voi','xinh quá','quá xinh','quá đẹp','perfect','xuất sắc'];
+function _heurClassify(text){
+  const raw=(text||'').trim(); const t=raw.toLowerCase();
+  if(!t) return {label:'spam'};
+  if(/^@/.test(raw) || raw.replace(/@\S+/g,'').trim().length<3) return {label:'spam'}; // tag tên / mention-only
+  if(INTENT_KW.some(k=>t.includes(k))||/\blink\b|\bgiá\b/.test(t)) return {label:'intent'};
+  if(t.length<6) return {label:'spam'};
+  if(PRAISE_KW.some(k=>t.includes(k)) && t.length<28) return {label:'praise'};
+  return {label:'pain', pain:raw, persona:'Chưa phân loại', priority:'medium'};
+}
+async function extractPainsFromCSKH(){ return classifyAndRouteComments(); }
+async function classifyAndRouteComments(){
+  const rows=(S.sheets.cskh||[]).filter(r=>(r.message&&r.message.trim())||(r.pain&&r.pain.trim()));
+  if(!rows.length){ alert('CSKH sheet trống — thêm dòng có nội dung trước.'); return; }
+  if(!S.intentBank) S.intentBank=[];
+  if(!S.praiseBank) S.praiseBank=[];
+  let res=null;
+  if(getLLMSettings().key){
+    const prof=S.productProfile||{};
+    const items=rows.map((r,i)=>({i,text:(r.message||r.pain||'').slice(0,200)}));
+    const sys=`Bạn là bộ lọc bình luận TikTok Shop. Phân loại mỗi bình luận:
+- "pain": nỗi đau/khó chịu/rào cản tâm lý thật → chuẩn hoá thành 1 câu nỗi đau, đoán persona + priority(high/medium/low) + funnelStep(1-6).
+- "intent": ý định mua (hỏi giá, mua ở đâu, inbox, link, ship...).
+- "praise": khen chung chung.
+- "spam": tag tên, vô nghĩa.
+Hồ sơ SP: ${JSON.stringify({name:prof.name,audience:prof.audience,usp:prof.usp})}
+Trả về DUY NHẤT JSON: {"items":[{"i":0,"label":"pain|intent|praise|spam","pain":"...","persona":"...","priority":"medium","funnelStep":2}]}
+${RBL_KB_PROMPT}`;
+    const usr='BÌNH LUẬN:\n'+items.map(it=>`${it.i}. ${it.text}`).join('\n');
+    const out=await aiosLLM(sys,usr,2500);
+    if(out){ const j=parseJSONLoose(out); res=j?.items; }
+  }
+  if(!res){ res=rows.map((r,i)=>Object.assign({i},_heurClassify(r.message||r.pain))); }
+  const counts={pain:0,intent:0,praise:0,spam:0};
+  res.forEach(item=>{
+    const r=rows[item.i]; if(!r) return;
+    const raw=(r.message||r.pain||'').trim();
+    if(item.label==='pain'){
+      const text=(item.pain||r.pain||raw).trim();
+      if(text && !S.pains.find(p=>p.text===text)){
+        S.pains.push({id:uid(),text,persona:item.persona||'Chưa phân loại',priority:item.priority||'medium',source:'CSKH '+(r.channel||''),date:today(),usedCount:0,funnelStep:item.funnelStep||null});
+        emit('pain.added',{text,source:'CSKH',persona:item.persona,priority:item.priority});
+      }
+      r.pain=text; r.status='Added to Bank'; counts.pain++;
+    } else if(item.label==='intent'){
+      S.intentBank.push({id:uid(),text:raw,channel:r.channel||'',date:today()});
+      r.status='Intent/Sale'; if(!(r.tags||'').includes('#intent')) r.tags=((r.tags||'')+' #intent').trim(); counts.intent++;
+    } else if(item.label==='praise'){
+      S.praiseBank.push({id:uid(),text:raw,channel:r.channel||'',date:today()});
+      r.status='Praise'; counts.praise++;
+    } else { r.status='Spam/Bỏ'; counts.spam++; }
   });
-  save();renderCSKH();updateBadges();
-  alert(`Đã thêm ${added} pain vào Pain Bank!`);
+  save(); renderCSKH(); renderPainBank(); updateBadges();
+  alert(`Đã lọc ${res.length} bình luận:\n• Pain → Bank: ${counts.pain}\n• Intent (chốt đơn): ${counts.intent}\n• Khen (social proof): ${counts.praise}\n• Spam/bỏ: ${counts.spam}${getLLMSettings().key?'':'\n\n(offline heuristic — kết nối Mô hình AI để lọc chính xác hơn)'}`);
 }
 
 // ============================================================
