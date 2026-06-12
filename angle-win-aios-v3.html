@@ -417,7 +417,11 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
 <div id="tab-b3" class="tab">
   <div class="page-header">
     <div class="page-title">B3 — <span>Thực Chiến</span></div>
-    <button class="btn btn-primary" onclick="openTestModal()"><i class="fa fa-play"></i> Đưa vào Test</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;cursor:pointer;" title="Tự kéo số liệu mỗi 10 phút (khi mở tab)"><input type="checkbox" id="auto-metrics" style="width:auto;" onchange="toggleAutoMetrics(this)"> tự cập nhật 10′</label>
+      <button class="btn btn-ghost" onclick="pullMetricsNow(this)"><i class="fa fa-cloud-arrow-down"></i> Tự động lấy số liệu</button>
+      <button class="btn btn-primary" onclick="openTestModal()"><i class="fa fa-play"></i> Đưa vào Test</button>
+    </div>
   </div>
   <div class="card-grid g4" style="margin-bottom:20px;">
     <div class="stat-card"><div class="stat-val" style="color:var(--cyan)" id="b3-testing">0</div><div class="stat-label">Đang Test</div></div>
@@ -1694,8 +1698,44 @@ function startTest(){
   save();closeModal('modal-test');renderB3();renderB4();renderOverview();updateBadges();
 }
 
+// ===== AUTO-PULL SỐ LIỆU TỪ NỀN TẢNG (qua n8n) — khỏi nhập tay =====
+function _metricsWebhook(){ const c=window.AIOS_CONFIG||{}; return c.n8nUrl ? c.n8nUrl + (c.metricsPath||'/webhook/aios-pull-metrics') : null; }
+let _metricsTimer=null;
+async function pullMetricsNow(btn, silent){
+  const url=_metricsWebhook();
+  const angles=(S.angles||[]).filter(a=>a.status==='testing' || (a.koc && a.result==null));
+  if(!angles.length){ if(!silent) alert('Chưa có angle nào đang test. Hãy "Đưa vào Test" trước (gắn KOC/campaign để lấy số liệu).'); return; }
+  if(!url){ if(!silent) alert('Chưa cấu hình n8n. Cần webhook "aios-pull-metrics" nối API nền tảng (xem hướng dẫn).'); return; }
+  const old=btn?btn.innerHTML:''; if(btn){btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang lấy...';btn.disabled=true;}
+  try{
+    const payload={ platform:currentPlatform, workspace_id:currentWS?.id||'default',
+      angles:angles.map(a=>({id:a.id,hook:a.hook,koc:a.koc||'',campaign:a.campaign||'',platform:a.platform||currentPlatform,testDate:a.testDate||''})) };
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json().catch(()=>null);
+    const metrics=d?.metrics||d?.results||(Array.isArray(d)?d:null);
+    if(!metrics||!metrics.length){ if(!silent) alert('n8n chưa trả số liệu (rỗng). Kiểm tra workflow "aios-pull-metrics" đã nối API nền tảng (TikTok/Meta/Shopee) chưa.'); return; }
+    const thr=S.wb?.thr||30; let updated=0;
+    metrics.forEach(m=>{ const a=(S.angles||[]).find(x=>x.id===(m.angleId||m.id)); if(!a) return;
+      if(m.hookRate!=null) a.hookRate=parseFloat(m.hookRate);
+      if(m.comments!=null) a.comments=parseInt(m.comments);
+      if(m.sales!=null) a.sales=parseInt(m.sales);
+      if(a.hookRate!=null){ a.status=a.hookRate>=thr?'win':'flop'; a.result=a.status; aiosLogEvent(a.result,a.id,{hookRate:a.hookRate,sales:a.sales,via:'auto'}); }
+      updated++;
+    });
+    save(); renderB3(); renderB4(); if(typeof renderOverview==='function')renderOverview(); updateBadges();
+    emit('metrics.pulled',{count:updated,via:'n8n'});
+    if(!silent) alert(`✅ Tự lấy số liệu cho ${updated} angle từ nền tảng (qua n8n). WIN/FLOP tự cập nhật → vòng học đã ăn dữ liệu mới.`);
+  }catch(e){ if(!silent) alert('Lỗi lấy số liệu: '+e.message); console.warn('[pullMetrics]',e); }
+  finally{ if(btn){btn.innerHTML=old;btn.disabled=false;} }
+}
+function toggleAutoMetrics(cb){
+  if(cb.checked){ localStorage.setItem('aios_auto_metrics','1'); if(_metricsTimer)clearInterval(_metricsTimer); _metricsTimer=setInterval(()=>pullMetricsNow(null,true),600000); pullMetricsNow(null,true); }
+  else { localStorage.removeItem('aios_auto_metrics'); if(_metricsTimer){clearInterval(_metricsTimer);_metricsTimer=null;} }
+}
 function renderB3(){
   const tbody=document.getElementById('b3-tbody');if(!tbody)return;
+  const am=document.getElementById('auto-metrics');
+  if(am){ am.checked=!!localStorage.getItem('aios_auto_metrics'); if(am.checked && !_metricsTimer){ _metricsTimer=setInterval(()=>pullMetricsNow(null,true),600000); } }
   const angles=S.angles.filter(a=>a.status==='testing'||a.status==='win'||a.status==='flop');
   const testing=angles.filter(a=>a.status==='testing').length;
   const pass=angles.filter(a=>a.status==='win').length;
