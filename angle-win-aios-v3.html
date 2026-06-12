@@ -55,6 +55,9 @@ tr:hover td{background:rgba(255,255,255,.03);}
 .badge-purple{background:rgba(167,139,250,.2);color:var(--purple);}
 .badge-orange{background:rgba(251,146,60,.2);color:var(--orange);}
 .badge-muted{background:rgba(100,116,139,.2);color:var(--muted);}
+.badge-success{background:rgba(74,222,128,.2);color:var(--green);}
+.badge-warn{background:rgba(250,204,21,.2);color:var(--yellow);}
+.badge-danger{background:rgba(248,113,113,.2);color:var(--red);}
 input,textarea,select{background:#1a1a28;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 12px;font-size:13px;width:100%;outline:none;font-family:inherit;}
 input:focus,textarea:focus,select:focus{border-color:var(--cyan);}
 label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
@@ -138,6 +141,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   <div class="nav-item" onclick="showTab('approval')"><i class="fa fa-bell fa-fw"></i> Approval Queue <span class="nav-badge red" id="badge-approval">0</span></div>
   <div class="nav-item" onclick="showTab('b1')"><i class="fa fa-satellite-dish fa-fw"></i> B1 — Sensors <span class="nav-badge" id="badge-b1">0</span></div>
   <div class="nav-item" onclick="showTab('b2')"><i class="fa fa-flask fa-fw"></i> B2 — AI Factory</div>
+  <div class="nav-item" onclick="showTab('playbook')"><i class="fa fa-book-open fa-fw"></i> Playbook RBL</div>
   <div class="nav-item" onclick="showTab('b3')"><i class="fa fa-video fa-fw"></i> B3 — Thực Chiến <span class="nav-badge yellow" id="badge-b3">0</span></div>
   <div class="nav-item" onclick="showTab('b4')"><i class="fa fa-trophy fa-fw"></i> B4 — Kết Quả <span class="nav-badge green" id="badge-b4">0</span></div>
   <div class="nav-item" onclick="showTab('realtime')"><i class="fa fa-tower-broadcast fa-fw"></i> Realtime W/F <span class="nav-badge" id="badge-realtime">0</span></div>
@@ -206,7 +210,10 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <div class="page-title"><span>Approval Queue</span></div>
       <div id="queue-subtitle" style="font-size:13px;color:var(--muted);margin-top:4px;">Không có angle chờ duyệt</div>
     </div>
-    <button class="btn btn-primary" id="btn-generate" onclick="generateQueue()"><i class="fa fa-wand-magic-sparkles"></i> Generate Queue</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" id="btn-llm" onclick="openLLMModal()"><i class="fa fa-microchip"></i> <span id="llm-active-label">Mô hình AI</span></button>
+      <button class="btn btn-primary" id="btn-generate" onclick="generateQueue()"><i class="fa fa-wand-magic-sparkles"></i> Generate Queue</button>
+    </div>
   </div>
   <div class="alert alert-info"><i class="fa fa-bolt"></i><span><strong>Bạn chỉ cần Approve / Reject</strong> — AI đã làm phần còn lại. Mỗi sáng 10 phút là đủ.</span></div>
   <div id="aios-insights" style="display:none;margin-bottom:14px;"></div>
@@ -228,6 +235,8 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   <div class="page-header">
     <div class="page-title">B1 — <span>Sensors</span></div>
     <div style="display:flex;gap:8px;">
+      <button class="btn btn-warn btn-sm" onclick="openProductProfileModal()"><i class="fa fa-book"></i> Hồ Sơ SP</button>
+      <button class="btn btn-purple btn-sm" onclick="runMarketAnalysis()"><i class="fa fa-brain"></i> Phân Tích Đa Chiều</button>
       <button class="btn btn-ghost btn-sm" onclick="syncAllSensors()"><i class="fa fa-rotate"></i> Sync All</button>
       <button class="btn btn-primary btn-sm" onclick="openAddPainModal()"><i class="fa fa-plus"></i> Add Pain</button>
     </div>
@@ -264,6 +273,39 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;" onclick="simulateSync('tiktok')"><i class="fa fa-rotate"></i> Sync</button>
     </div>
   </div>
+
+  <!-- ===== MARKET INTELLIGENCE — ĐỐI THỦ ===== -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-weight:700;font-size:14px;"><i class="fa fa-binoculars" style="color:var(--purple);"></i> Market Intelligence — Đối Thủ</div>
+      <span class="badge badge-muted" id="profile-status">Chưa có hồ sơ SP</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Gắn link đối thủ (TikTok Shop / Shopee / Landing) → quét → AI lọc insight thị trường, đối chiếu hồ sơ SP + số liệu nội bộ để đề xuất Pain sát thực tế.</div>
+    <div class="form-row g4" style="margin-bottom:10px;align-items:end;">
+      <div class="form-group" style="margin-bottom:0;"><label>Link / Shop đối thủ</label><input id="comp-url" placeholder="https://tiktok.com/@shop... hoặc link Shopee"></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Tên đối thủ</label><input id="comp-name" placeholder="VD: Shop ABC"></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Nền tảng</label>
+        <select id="comp-platform"><option>TikTok Shop</option><option>Shopee</option><option>Lazada</option><option>Facebook</option><option>Landing Page</option><option>Khác</option></select>
+      </div>
+      <button class="btn btn-primary btn-sm" style="height:38px;" onclick="addCompetitor()"><i class="fa fa-plus"></i> Thêm</button>
+    </div>
+    <div class="tbl-wrap" style="margin-bottom:12px;"><table><thead><tr><th>#</th><th>Đối thủ</th><th>Nền tảng</th><th>Link</th><th>Trạng thái quét</th><th>Insight thu được</th><th>Action</th></tr></thead>
+      <tbody id="comp-tbody"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Chưa có đối thủ nào — thêm link ở trên</td></tr></tbody></table></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="scanAllCompetitors()"><i class="fa fa-radar"></i> Quét tất cả đối thủ</button>
+      <button class="btn btn-purple btn-sm" onclick="runMarketAnalysis()"><i class="fa fa-brain"></i> Phân tích đa chiều → Đề xuất Pain</button>
+    </div>
+  </div>
+
+  <!-- ===== INSIGHT & PAIN ĐỀ XUẤT ===== -->
+  <div class="card" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;"><i class="fa fa-lightbulb" style="color:var(--orange);"></i> Insight & Pain Đề Xuất <span style="font-weight:400;color:var(--muted);font-size:12px;">— tổng hợp Hồ sơ SP × Đối thủ × Số liệu nội bộ</span></div>
+      <span class="badge badge-muted" id="mi-source">—</span>
+    </div>
+    <div id="market-insights"><div style="color:var(--muted);text-align:center;padding:24px;font-size:13px;">Chưa phân tích. Nạp Hồ sơ SP + thêm đối thủ, rồi bấm <b>Phân tích đa chiều</b>.</div></div>
+  </div>
+
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div style="font-weight:700;font-size:14px;">Pain Bank</div>
@@ -274,6 +316,26 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Pain Text</th><th>Nguồn</th><th>Persona</th><th>Priority</th><th>Lần dùng</th><th>Action</th></tr></thead>
     <tbody id="pain-tbody"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px;">Pain Bank trống — thêm pain hoặc Sync</td></tr></tbody></table></div>
   </div>
+</div>
+
+<!-- ===== PLAYBOOK RBL ===== -->
+<div id="tab-playbook" class="tab">
+  <div class="page-header">
+    <div class="page-title">Playbook <span>RBL</span></div>
+    <div style="font-size:12px;color:var(--muted);max-width:420px;text-align:right;">Khung kiến thức nền (funnel · hook · pillar · ads). Chính kho này cũng được AI dùng khi sinh pain/angle.</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+    <button class="btn btn-primary btn-sm pb-tab-btn" data-pb="funnel" onclick="showPlaybook('funnel')"><i class="fa fa-filter"></i> Funnel 6 bước</button>
+    <button class="btn btn-ghost btn-sm pb-tab-btn" data-pb="hook" onclick="showPlaybook('hook')"><i class="fa fa-bolt"></i> Hook Generator</button>
+    <button class="btn btn-ghost btn-sm pb-tab-btn" data-pb="insight" onclick="showPlaybook('insight')"><i class="fa fa-user-group"></i> Insight 3 tầng</button>
+    <button class="btn btn-ghost btn-sm pb-tab-btn" data-pb="pillar" onclick="showPlaybook('pillar')"><i class="fa fa-layer-group"></i> Pillar + Lịch</button>
+    <button class="btn btn-ghost btn-sm pb-tab-btn" data-pb="ads" onclick="showPlaybook('ads')"><i class="fa fa-bullseye"></i> Meta Ads Benchmark</button>
+  </div>
+  <div id="pb-funnel" class="pb-panel"></div>
+  <div id="pb-hook" class="pb-panel hidden"></div>
+  <div id="pb-insight" class="pb-panel hidden"></div>
+  <div id="pb-pillar" class="pb-panel hidden"></div>
+  <div id="pb-ads" class="pb-panel hidden"></div>
 </div>
 
 <!-- ===== B2 AI FACTORY ===== -->
@@ -898,6 +960,52 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   </div>
 </div>
 
+<div id="modal-product-profile" class="modal-overlay hidden">
+  <div class="modal" style="width:620px;max-width:94vw;">
+    <div class="modal-header"><div class="modal-title"><i class="fa fa-book" style="color:var(--yellow);"></i> Hồ Sơ Sản Phẩm (Knowledge Base)</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-product-profile')">✕</button></div>
+    <div class="alert alert-info" style="margin-bottom:14px;"><i class="fa fa-info-circle"></i> Hồ sơ này là "kim chỉ nam" để AI lọc bình luận rác và chỉ đề xuất Pain thật sự liên quan tới sản phẩm. Lưu riêng theo từng workspace.</div>
+    <div class="form-row g2">
+      <div class="form-group"><label>Tên Sản phẩm / Dịch vụ</label><input id="profile-name" placeholder="VD: Kem chấm mụn ABC"></div>
+      <div class="form-group"><label>Tệp khách hàng (Target Audience)</label><input id="profile-audience" placeholder="VD: Học sinh, sinh viên tuổi dậy thì"></div>
+    </div>
+    <div class="form-row g2">
+      <div class="form-group"><label>Tính năng nổi bật (USP)</label><textarea id="profile-usp" rows="2" placeholder="VD: BHA 2%, xẹp mụn sau 24h, không khô tróc"></textarea></div>
+      <div class="form-group"><label>Khoảng giá / Phân khúc</label><input id="profile-price" placeholder="VD: 150-250k, phân khúc tầm trung"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;"><label>Nội dung Landing / Tài liệu chi tiết (tuỳ chọn)</label><textarea id="profile-content" rows="4" placeholder="Copy nội dung chi tiết sản phẩm vào đây để AI học sâu hơn..."></textarea></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="saveProductProfile()" style="flex:1;"><i class="fa fa-save"></i> Lưu Hồ sơ</button>
+      <button class="btn btn-warn" onclick="generateSeedPains(this)" style="flex:1;"><i class="fa fa-wand-magic-sparkles"></i> AI tạo Pain từ Hồ sơ</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-llm" class="modal-overlay hidden">
+  <div class="modal" style="width:600px;max-width:94vw;">
+    <div class="modal-header"><div class="modal-title"><i class="fa fa-microchip" style="color:var(--cyan);"></i> Kết nối Mô hình AI (Brain)</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-llm')">✕</button></div>
+    <div class="alert alert-info" style="margin-bottom:14px;"><i class="fa fa-info-circle"></i> Chọn nhà cung cấp & dán API key. Toàn bộ tính năng AI (sinh Pain, phân tích đa chiều, Hook, Analytics Chat) sẽ chạy qua model bạn chọn. Có lựa chọn <b>miễn phí</b> (Gemini / Groq / OpenRouter).</div>
+    <div class="form-row g2">
+      <div class="form-group"><label>Nhà cung cấp</label>
+        <select id="llm-provider" onchange="onLLMProviderChange()"></select>
+      </div>
+      <div class="form-group"><label>Model</label>
+        <select id="llm-model"></select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:6px;"><label>API Key <span id="llm-key-hint" style="color:var(--muted);font-weight:400;"></span></label>
+      <input id="llm-key" type="password" placeholder="Dán API key..." autocomplete="off"></div>
+    <div id="llm-help" style="font-size:11px;color:var(--muted);margin-bottom:12px;"></div>
+    <div id="llm-test-result" style="margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="testLLM(this)" style="flex:1;"><i class="fa fa-plug"></i> Test kết nối</button>
+      <button class="btn btn-primary" onclick="saveLLMConfig()" style="flex:1;"><i class="fa fa-save"></i> Lưu & Kích hoạt</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+      🔑 Lấy key miễn phí: <b>Gemini</b> aistudio.google.com/apikey · <b>Groq</b> console.groq.com/keys · <b>OpenRouter</b> openrouter.ai/keys (lọc model có nhãn <i>:free</i>). Key lưu cục bộ trong trình duyệt (localStorage), không gửi đi đâu ngoài nhà cung cấp.
+    </div>
+  </div>
+</div>
+
 <div id="modal-test" class="modal-overlay hidden">
   <div class="modal">
     <div class="modal-header"><div class="modal-title">Đưa Angle vào Test</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-test')">✕</button></div>
@@ -1057,6 +1165,8 @@ const S = {
   wb:{url:'',thr:30,scale:'off'},
   approvalQueue:[],
   sheets:{cskh:[],affops:[],competitor:[],trends:[]},
+  productProfile:{name:'',audience:'',usp:'',price:'',content:''},
+  competitors:[], marketInsights:[],
   nghiemThu:[],
   kaizen:{log:[],practices:[],retros:[]},
   loopRunning:false, loopLog:[],
@@ -1160,14 +1270,15 @@ function showTab(t){
   const nav=document.querySelector(`.nav-item[onclick="showTab('${t}')"]`);
   if(nav)nav.classList.add('active');
   currentTab=t;
-  if(t==='b1')renderPainBank();
+  if(t==='b1'){renderPainBank();renderMarketIntel();}
+  if(t==='playbook')renderPlaybook();
   if(t==='b2'){renderB2Table();populatePainSelect();}
   if(t==='b3')renderB3();
   if(t==='b4')renderB4();
   if(t==='sheets')renderSheet(currentSheet);
   if(t==='nghiemthu'){renderNghiemThuHistory();populateNTSelect();}
   if(t==='kaizen'){refreshKaizen();}
-  if(t==='approval'){renderQueue();aiosRenderInsights();}
+  if(t==='approval'){renderQueue();aiosRenderInsights();updateLLMLabel();}
   if(t==='autoloop')renderLoopLog();
   if(t==='blacklist')renderBlacklist();
   if(t==='realtime'){renderRealtime();rtStartPolling();}else{rtStopPolling();}
@@ -1866,6 +1977,629 @@ function extractPainsFromCSKH(){
   save();renderCSKH();updateBadges();
   alert(`Đã thêm ${added} pain vào Pain Bank!`);
 }
+
+// ============================================================
+// ===== MARKET INTELLIGENCE: Hồ sơ SP + Đối thủ + Phân tích đa chiều
+// ============================================================
+
+// ============================================================
+// ===== MULTI-PROVIDER LLM (chọn được Claude/GPT/Gemini/Groq/OpenRouter)
+// ============================================================
+async function _openaiLike(url,key,model,system,user,maxTokens,extraHeaders){
+  const res=await fetch(url,{method:'POST',
+    headers:Object.assign({'content-type':'application/json','authorization':'Bearer '+key},extraHeaders||{}),
+    body:JSON.stringify({model,messages:[{role:'system',content:system},{role:'user',content:user}],max_tokens:maxTokens||1500})});
+  const d=await res.json(); if(d.error)throw new Error(d.error.message||d.error||'API error');
+  return d.choices?.[0]?.message?.content||'';
+}
+const LLM_PROVIDERS = {
+  anthropic:{ label:'Claude (Anthropic)', keyHint:'sk-ant-...', free:false,
+    models:['claude-haiku-4-5-20251001','claude-sonnet-4-6','claude-opus-4-8'],
+    async call(key,model,system,user,maxTokens){
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+        headers:{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model,max_tokens:maxTokens||1500,system,messages:[{role:'user',content:user}]})});
+      const d=await res.json(); if(d.error)throw new Error(d.error.message||'Anthropic error');
+      return d.content?.[0]?.text||'';
+    }},
+  openai:{ label:'GPT (OpenAI)', keyHint:'sk-...', free:false,
+    models:['gpt-4o-mini','gpt-4o','gpt-4.1-mini','gpt-4.1'],
+    call:(k,m,s,u,t)=>_openaiLike('https://api.openai.com/v1/chat/completions',k,m,s,u,t) },
+  gemini:{ label:'Gemini (Google) — FREE', keyHint:'AIza...', free:true,
+    models:['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-pro'],
+    async call(key,model,system,user,maxTokens){
+      const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const res=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:user}]}],generationConfig:{maxOutputTokens:maxTokens||1500}})});
+      const d=await res.json(); if(d.error)throw new Error(d.error.message||'Gemini error');
+      return d.candidates?.[0]?.content?.parts?.map(p=>p.text).join('')||'';
+    }},
+  groq:{ label:'Groq — FREE, siêu nhanh', keyHint:'gsk_...', free:true,
+    models:['llama-3.3-70b-versatile','llama-3.1-8b-instant','gemma2-9b-it'],
+    call:(k,m,s,u,t)=>_openaiLike('https://api.groq.com/openai/v1/chat/completions',k,m,s,u,t) },
+  openrouter:{ label:'OpenRouter — nhiều model FREE', keyHint:'sk-or-...', free:true,
+    models:['google/gemini-2.0-flash-exp:free','meta-llama/llama-3.3-70b-instruct:free','qwen/qwen-2.5-72b-instruct:free','deepseek/deepseek-chat'],
+    call:(k,m,s,u,t)=>_openaiLike('https://openrouter.ai/api/v1/chat/completions',k,m,s,u,t,{'HTTP-Referer':'https://angle-win-aios','X-Title':'Angle Win AIOS'}) }
+};
+
+function getLLMSettings(){
+  const c=window.AIOS_CONFIG||{};
+  const keys=Object.assign({}, c.llmKeys||{});
+  if(c.anthropicApiKey && !keys.anthropic) keys.anthropic=c.anthropicApiKey; // backward compat
+  let provider=c.llmProvider || (keys.anthropic?'anthropic':'');
+  const model=c.llmModel || LLM_PROVIDERS[provider]?.models?.[0] || '';
+  const key=keys[provider]||'';
+  return {provider,model,key,keys};
+}
+function llmActiveLabel(){
+  const s=getLLMSettings();
+  if(LLM_PROVIDERS[s.provider] && s.key){
+    const short=LLM_PROVIDERS[s.provider].label.split(' —')[0].split(' (')[0];
+    return short+' · '+s.model.split('/').pop();
+  }
+  if(window.AIOS_CONFIG?.n8nUrl) return 'n8n webhook';
+  return 'Chưa kết nối';
+}
+
+// Gọi LLM theo provider đã chọn → fallback n8n → offline(null cho heuristic)
+async function llmCall(system, user, maxTokens){
+  const s=getLLMSettings();
+  const prov=LLM_PROVIDERS[s.provider];
+  if(prov && s.key){ return await prov.call(s.key, s.model, system, user, maxTokens); }
+  const c=window.AIOS_CONFIG||{};
+  const n8n = c.n8nUrl ? c.n8nUrl + (c.aiTaskPath||'/webhook/aios-ai-task') : null;
+  if(n8n){
+    const res=await fetch(n8n,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({system,user,workspace_id:currentWS?.id||'default'})});
+    const d=await res.json(); return d.answer||d.text||'';
+  }
+  return null;
+}
+async function aiosLLM(system, user, maxTokens){ return llmCall(system, user, maxTokens); }
+
+// ---- Modal chọn model ----
+function updateLLMLabel(){ const el=document.getElementById('llm-active-label'); if(el)el.textContent=llmActiveLabel(); }
+function openLLMModal(){
+  const s=getLLMSettings();
+  const provSel=document.getElementById('llm-provider');
+  provSel.innerHTML=Object.entries(LLM_PROVIDERS).map(([k,v])=>`<option value="${k}" ${k===s.provider?'selected':''}>${v.label}</option>`).join('');
+  if(!s.provider) provSel.value='gemini';
+  onLLMProviderChange();
+  if(s.model){ const m=document.getElementById('llm-model'); if([...m.options].some(o=>o.value===s.model)) m.value=s.model; }
+  document.getElementById('llm-test-result').innerHTML='';
+  openModal('modal-llm');
+}
+function onLLMProviderChange(){
+  const p=document.getElementById('llm-provider').value;
+  const prov=LLM_PROVIDERS[p];
+  document.getElementById('llm-model').innerHTML=prov.models.map(m=>`<option value="${m}">${m}</option>`).join('');
+  document.getElementById('llm-key-hint').textContent='('+prov.keyHint+')';
+  document.getElementById('llm-help').innerHTML = prov.free ? '🆓 Nhà cung cấp có gói miễn phí.' : '💳 Cần tài khoản trả phí.';
+  const s=getLLMSettings();
+  document.getElementById('llm-key').value = (s.keys[p]||'');
+}
+async function testLLM(btn){
+  const p=document.getElementById('llm-provider').value;
+  const model=document.getElementById('llm-model').value;
+  const key=document.getElementById('llm-key').value.trim();
+  const out=document.getElementById('llm-test-result');
+  if(!key){ out.innerHTML='<div class="alert alert-info" style="border-color:var(--yellow);">Cần nhập API key.</div>'; return; }
+  const old=btn.innerHTML; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang test...'; btn.disabled=true;
+  try{
+    const r=await LLM_PROVIDERS[p].call(key,model,'Trả lời đúng 1 từ.','Nói "OK"',20);
+    out.innerHTML=`<div class="alert alert-info" style="border-color:var(--green);"><i class="fa fa-check-circle" style="color:var(--green);"></i> Kết nối OK — model phản hồi: "${esc((r||'').slice(0,40))}"</div>`;
+  }catch(e){
+    out.innerHTML=`<div class="alert alert-info" style="border-color:var(--red);"><i class="fa fa-circle-xmark" style="color:var(--red);"></i> Lỗi: ${esc(e.message)}<br><span style="font-size:11px;color:var(--muted);">Nếu lỗi CORS/network: provider này có thể chặn gọi trực tiếp từ trình duyệt — thử provider khác hoặc dùng qua n8n.</span></div>`;
+  }finally{ btn.innerHTML=old; btn.disabled=false; }
+}
+function saveLLMConfig(){
+  const p=document.getElementById('llm-provider').value;
+  const model=document.getElementById('llm-model').value;
+  const key=document.getElementById('llm-key').value.trim();
+  const keys=Object.assign({}, window.AIOS_CONFIG?.llmKeys||{});
+  keys[p]=key;
+  saveAIOSConfig({llmProvider:p, llmModel:model, llmKeys:keys});
+  updateLLMLabel();
+  emit('llm.configured',{provider:p,model});
+  alert('✅ Đã kích hoạt: '+LLM_PROVIDERS[p].label+' · '+model);
+  closeModal('modal-llm');
+}
+
+// Trích JSON đầu tiên trong text trả về của LLM
+function parseJSONLoose(txt){
+  if(!txt) return null;
+  try{ return JSON.parse(txt); }catch(e){}
+  const m = txt.match(/\{[\s\S]*\}/);
+  if(m){ try{ return JSON.parse(m[0]); }catch(e){} }
+  return null;
+}
+
+// ---------- HỒ SƠ SẢN PHẨM ----------
+function openProductProfileModal(){
+  const p = S.productProfile||{};
+  document.getElementById('profile-name').value = p.name||'';
+  document.getElementById('profile-audience').value = p.audience||'';
+  document.getElementById('profile-usp').value = p.usp||'';
+  document.getElementById('profile-price').value = p.price||'';
+  document.getElementById('profile-content').value = p.content||'';
+  openModal('modal-product-profile');
+}
+function saveProductProfile(){
+  S.productProfile = {
+    name: document.getElementById('profile-name').value.trim(),
+    audience: document.getElementById('profile-audience').value.trim(),
+    usp: document.getElementById('profile-usp').value.trim(),
+    price: document.getElementById('profile-price').value.trim(),
+    content: document.getElementById('profile-content').value.trim()
+  };
+  save();
+  emit('profile.saved',{name:S.productProfile.name});
+  updateProfileStatus();
+  alert('✅ Đã lưu Hồ sơ sản phẩm. AI sẽ lọc & đề xuất Pain sát hơn.');
+  closeModal('modal-product-profile');
+}
+function updateProfileStatus(){
+  const el = document.getElementById('profile-status'); if(!el) return;
+  const ok = S.productProfile && S.productProfile.name;
+  el.textContent = ok ? ('SP: '+S.productProfile.name) : 'Chưa có hồ sơ SP';
+  el.className = 'badge '+(ok?'badge-success':'badge-muted');
+}
+
+async function generateSeedPains(btn){
+  const name = document.getElementById('profile-name').value.trim();
+  const usp = document.getElementById('profile-usp').value.trim();
+  const aud = document.getElementById('profile-audience').value.trim();
+  if(!name || !usp){ alert('Cần ít nhất Tên SP và USP.'); return; }
+  saveProductProfile.__silent = true;
+  const old = btn.innerHTML; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang suy luận...'; btn.disabled=true;
+  try{
+    const sys = `Bạn là chuyên gia insight & copywriting TikTok Shop. Từ hồ sơ sản phẩm, suy luận các Nỗi đau (pain point) CỐT LÕI khiến khách phải mua. Pain phải là vấn đề/khó chịu thực tế, KHÔNG phải câu hỏi mua hàng hay khen ngợi. Trả về DUY NHẤT JSON: {"pains":[{"text":"...","persona":"...","priority":"high|medium|low","rationale":"..."}]}\n\n${RBL_KB_PROMPT}`;
+    const usr = `Sản phẩm: ${name}\nUSP: ${usp}\nTệp khách: ${aud||'chưa rõ'}\nGiá: ${document.getElementById('profile-price').value||'?'}\nHãy đề xuất 4-6 pain.`;
+    const out = await aiosLLM(sys, usr, 1200);
+    let pains;
+    if(out){ const j = parseJSONLoose(out); pains = j?.pains; }
+    if(!pains || !pains.length){ pains = heuristicSeedPains(name,usp,aud); }
+    let added=0;
+    pains.forEach(p=>{
+      const text=(p.text||'').trim(); if(!text) return;
+      if(S.pains.find(x=>x.text===text)) return;
+      S.pains.push({id:uid(),text,persona:p.persona||aud||'Chưa phân loại',priority:p.priority||'medium',source:'AI Hồ sơ SP',date:today(),usedCount:0,rationale:p.rationale||''});
+      added++;
+    });
+    save(); renderPainBank(); updateBadges();
+    emit('pain.seeded',{count:added,product:name});
+    alert(`✅ Đã thêm ${added} pain từ hồ sơ${out?'':' (chế độ offline — heuristic, cấu hình API key để chính xác hơn)'}.`);
+    closeModal('modal-product-profile');
+  }catch(e){ alert('Lỗi tạo pain: '+e.message); }
+  finally{ btn.innerHTML=old; btn.disabled=false; }
+}
+function heuristicSeedPains(name,usp,aud){
+  // Offline: ghép pain từ USP của CHÍNH sản phẩm (không hardcode ngành khác)
+  const a = aud||'Khách hàng mục tiêu';
+  const feats = usp.split(/[,;.\n]/).map(s=>s.trim()).filter(Boolean).slice(0,4);
+  const out = feats.map(f=>({text:`Chưa giải quyết được vấn đề mà "${f}" hướng tới — vẫn loay hoay với ${name}`,persona:a,priority:'medium',rationale:'Suy từ USP (offline)'}));
+  out.push({text:`Đã thử nhiều sản phẩm tương tự nhưng không hiệu quả, ngại tốn tiền tiếp`,persona:a,priority:'high',rationale:'Pain phổ quát (offline)'});
+  return out;
+}
+
+// ---------- ĐỐI THỦ ----------
+function addCompetitor(){
+  const url=document.getElementById('comp-url').value.trim();
+  const nm=document.getElementById('comp-name').value.trim();
+  const pf=document.getElementById('comp-platform').value;
+  if(!url && !nm){ alert('Nhập link hoặc tên đối thủ.'); return; }
+  if(!S.competitors) S.competitors=[];
+  S.competitors.push({id:uid(),url,name:nm||url,platform:pf,status:'Chưa quét',insight:'',date:today()});
+  document.getElementById('comp-url').value=''; document.getElementById('comp-name').value='';
+  save(); renderCompetitors(); emit('competitor.added',{name:nm||url,platform:pf});
+}
+function removeCompetitor(id){
+  S.competitors=(S.competitors||[]).filter(c=>c.id!==id);
+  save(); renderCompetitors();
+}
+function renderCompetitors(){
+  const tb=document.getElementById('comp-tbody'); if(!tb) return;
+  const list=S.competitors||[];
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:16px;">Chưa có đối thủ nào — thêm link ở trên</td></tr>'; return; }
+  tb.innerHTML=list.map((c,i)=>`<tr>
+    <td>${i+1}</td>
+    <td>${esc(c.name)}</td>
+    <td><span class="badge badge-muted">${esc(c.platform)}</span></td>
+    <td>${c.url?`<a href="${esc(c.url)}" target="_blank" style="color:var(--cyan);font-size:12px;">link ↗</a>`:'—'}</td>
+    <td><span class="badge ${c.status==='Đã quét'?'badge-success':'badge-muted'}">${esc(c.status)}</span></td>
+    <td style="font-size:12px;color:var(--muted);max-width:260px;">${esc(c.insight||'—')}</td>
+    <td style="white-space:nowrap;">
+      <button class="btn btn-ghost btn-sm" onclick="scanCompetitor('${c.id}',this)" title="Quét"><i class="fa fa-radar"></i></button>
+      <button class="btn btn-danger btn-sm" onclick="removeCompetitor('${c.id}')"><i class="fa fa-trash"></i></button>
+    </td></tr>`).join('');
+}
+async function scanCompetitor(id,btn){
+  const c=(S.competitors||[]).find(x=>x.id===id); if(!c) return;
+  const old=btn?btn.innerHTML:''; if(btn){btn.innerHTML='<i class="fa fa-spinner fa-spin"></i>';btn.disabled=true;}
+  // Quét thật phải qua n8n/backend (CORS chặn scrape trực tiếp từ trình duyệt).
+  const scrapeHook=(window.AIOS_CONFIG&&window.AIOS_CONFIG.n8nUrl)?window.AIOS_CONFIG.n8nUrl+(window.AIOS_CONFIG.scrapePath||'/webhook/aios-scrape'):null;
+  try{
+    if(scrapeHook && c.url){
+      const r=await fetch(scrapeHook,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url:c.url,platform:c.platform,workspace_id:currentWS?.id||'default'})});
+      const d=await r.json();
+      c.insight=d.summary||d.insight||'Đã gửi yêu cầu quét tới n8n';
+      c.rawComments=d.comments||d.reviews||[];
+      c.status='Đã quét';
+      emit('research.scrape_trigger',{competitor:c.name,via:'n8n'});
+    } else {
+      const hasLLM=getLLMSettings().key;
+      if(hasLLM){
+        const sys='Bạn là chuyên gia phân tích đối thủ TikTok Shop. Từ tên/đường link đối thủ, suy luận góc bán & điểm yếu CÓ THỂ có. Ghi rõ đây là suy luận chưa có data thật. Trả 2-3 câu ngắn.';
+        const out=await aiosLLM(sys,`Đối thủ: ${c.name} (${c.platform}) ${c.url||''}`,400);
+        c.insight=(out||'').trim()||'(không có phản hồi AI)';
+        c.status='Đã quét (suy luận)';
+      } else {
+        c.insight='⚠ Cần cấu hình n8n scrape webhook (hoặc kết nối Mô hình AI) để quét dữ liệu thật.';
+        c.status='Chưa quét';
+      }
+    }
+  }catch(e){ c.insight='Lỗi quét: '+e.message; }
+  finally{ save(); renderCompetitors(); if(btn){btn.innerHTML=old;btn.disabled=false;} }
+}
+async function scanAllCompetitors(){
+  const list=S.competitors||[]; if(!list.length){ alert('Chưa có đối thủ nào.'); return; }
+  for(const c of list){ await scanCompetitor(c.id,null); }
+  alert('✅ Đã quét '+list.length+' đối thủ.');
+}
+
+// ---------- PHÂN TÍCH ĐA CHIỀU ----------
+function _internalSignals(){
+  // Số liệu nội bộ: pain theo nguồn, angle WIN/FLOP, persona thắng
+  const pains=S.pains||[], angles=S.angles||[];
+  const bySource={}; pains.forEach(p=>{bySource[p.source||'?']=(bySource[p.source||'?']||0)+1;});
+  const wins=angles.filter(a=>a.status==='win'||a.verdict==='WIN');
+  const flops=angles.filter(a=>a.status==='flop'||a.verdict==='FLOP');
+  const topPersona={}; wins.forEach(a=>{if(a.persona)topPersona[a.persona]=(topPersona[a.persona]||0)+1;});
+  return {
+    total_pains:pains.length, pains_by_source:bySource,
+    wins:wins.length, flops:flops.length,
+    winning_personas:Object.entries(topPersona).sort((x,y)=>y[1]-x[1]).slice(0,3).map(e=>e[0]),
+    sample_pains:pains.slice(0,15).map(p=>p.text)
+  };
+}
+
+async function runMarketAnalysis(){
+  const box=document.getElementById('market-insights');
+  const srcBadge=document.getElementById('mi-source');
+  if(box) box.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;"><i class="fa fa-spinner fa-spin"></i> Đang tổng hợp Hồ sơ SP × Đối thủ × Số liệu nội bộ...</div>';
+  const prof=S.productProfile||{};
+  const comps=(S.competitors||[]).map(c=>({name:c.name,platform:c.platform,insight:c.insight,comments:(c.rawComments||[]).slice(0,20)}));
+  const internal=_internalSignals();
+
+  const sys=`Bạn là Giám đốc Insight của hệ thống ANGLE WIN AIOS (TikTok Shop). Tổng hợp 3 nguồn: (1) Hồ sơ sản phẩm, (2) Dữ liệu đối thủ, (3) Số liệu nội bộ (pain bank + angle WIN/FLOP).
+Nhiệm vụ: phân tích ĐA CHIỀU và đề xuất Pain SÁT THỰC TẾ.
+QUY TẮC: Pain là nỗi đau/khó chịu/rào cản thật, KHÔNG phải câu hỏi mua ("mua ở đâu","giá bao nhiêu") hay khen chung chung. Ưu tiên persona đang thắng nội bộ. Tận dụng khoảng trống đối thủ chưa khai thác.
+Trả về DUY NHẤT JSON:
+{"market_insights":["..."],"competitor_gaps":["..."],"suggested_pains":[{"text":"...","persona":"...","priority":"high|medium|low","rationale":"...","angle_hint":"..."}]}
+
+${RBL_KB_PROMPT}`;
+  const usr=`HỒ SƠ SP:\n${JSON.stringify(prof)}\n\nĐỐI THỦ:\n${JSON.stringify(comps)}\n\nSỐ LIỆU NỘI BỘ:\n${JSON.stringify(internal)}\n\nĐề xuất 5-8 pain.`;
+
+  let data=null, mode='offline';
+  try{
+    const out=await aiosLLM(sys,usr,2000);
+    if(out){ data=parseJSONLoose(out); mode = llmActiveLabel(); }
+  }catch(e){}
+  if(!data){ data=heuristicMarketAnalysis(prof,comps,internal); mode='offline (heuristic)'; }
+
+  S.marketInsights=data; save();
+  if(srcBadge){ srcBadge.textContent='Nguồn: '+mode; srcBadge.className='badge '+(mode.startsWith('offline')?'badge-muted':'badge-success'); }
+  renderMarketInsights(data);
+  emit('market.analyzed',{mode,pains:(data.suggested_pains||[]).length});
+}
+
+function heuristicMarketAnalysis(prof,comps,internal){
+  const aud=prof.audience||'khách mục tiêu';
+  const insights=[];
+  insights.push(`Hồ sơ: ${prof.name||'(chưa đặt tên SP)'} — tệp ${aud}, USP: ${prof.usp||'chưa nhập'}.`);
+  if(internal.winning_personas?.length) insights.push(`Persona đang thắng nội bộ: ${internal.winning_personas.join(', ')} → nên nhân đôi khai thác.`);
+  insights.push(`Pain bank hiện ${internal.total_pains} entries; WIN ${internal.wins} / FLOP ${internal.flops}.`);
+  const gaps=comps.length?comps.map(c=>`${c.name}: ${c.insight||'chưa quét — quét để lấy khoảng trống'}`):['Chưa thêm đối thủ — thêm link để tìm khoảng trống thị trường.'];
+  const uspFeats=(prof.usp||'').split(/[,;.\n]/).map(s=>s.trim()).filter(Boolean).slice(0,4);
+  const pains=uspFeats.map(f=>({text:`Loay hoay với vấn đề mà "${f}" giải quyết, chưa tìm được giải pháp đáng tin`,persona:aud,priority:'medium',rationale:'Từ USP (offline)',angle_hint:`Demo trực tiếp ${f}`}));
+  pains.push({text:`Sợ mua nhầm hàng kém chất lượng như đã từng trải nghiệm với shop khác`,persona:aud,priority:'high',rationale:'Khoảng trống niềm tin (offline)',angle_hint:'Bằng chứng/feedback thật'});
+  return {market_insights:insights,competitor_gaps:gaps,suggested_pains:pains,_offline:true};
+}
+
+function renderMarketInsights(d){
+  const box=document.getElementById('market-insights'); if(!box) return;
+  if(!d){ box.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;">Chưa có kết quả.</div>'; return; }
+  const chip=(arr)=> (arr||[]).map(x=>`<li style="margin-bottom:4px;">${esc(x)}</li>`).join('') || '<li style="color:var(--muted);">—</li>';
+  const pains=(d.suggested_pains||[]);
+  const painRows=pains.map((p,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="max-width:260px;">${esc(p.text)}</td>
+    <td>${esc(p.persona||'—')}</td>
+    <td><span class="badge ${p.priority==='high'?'badge-danger':p.priority==='low'?'badge-muted':'badge-warn'}">${esc(p.priority||'medium')}</span></td>
+    <td style="font-size:11px;color:var(--muted);max-width:200px;">${esc(p.rationale||'')}${p.angle_hint?`<br><i style="color:var(--cyan);">↳ ${esc(p.angle_hint)}</i>`:''}</td>
+    <td><button class="btn btn-success btn-sm" onclick='pushSuggestedPain(${i})'><i class="fa fa-plus"></i></button></td>
+  </tr>`).join('');
+  box.innerHTML=`
+    <div class="card-grid g2" style="margin-bottom:14px;">
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:6px;"><i class="fa fa-eye" style="color:var(--purple);"></i> Insight thị trường</div><ul style="margin:0;padding-left:18px;font-size:13px;">${chip(d.market_insights)}</ul></div>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:6px;"><i class="fa fa-crosshairs" style="color:var(--red);"></i> Khoảng trống đối thủ</div><ul style="margin:0;padding-left:18px;font-size:13px;">${chip(d.competitor_gaps)}</ul></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-weight:700;font-size:13px;"><i class="fa fa-fire" style="color:var(--orange);"></i> Pain đề xuất (${pains.length})</div>
+      ${pains.length?`<button class="btn btn-purple btn-sm" onclick="pushAllSuggestedPains()"><i class="fa fa-upload"></i> Push tất cả vào Bank</button>`:''}
+    </div>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Pain Text</th><th>Persona</th><th>Priority</th><th>Lý do / Gợi ý angle</th><th>+</th></tr></thead><tbody>${painRows||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px;">Không có pain đề xuất</td></tr>'}</tbody></table></div>`;
+}
+function pushSuggestedPain(i){
+  const p=S.marketInsights?.suggested_pains?.[i]; if(!p) return;
+  if(S.pains.find(x=>x.text===p.text)){ alert('Pain này đã có trong Bank.'); return; }
+  S.pains.push({id:uid(),text:p.text,persona:p.persona||'Chưa phân loại',priority:p.priority||'medium',source:'AI Phân tích đa chiều',date:today(),usedCount:0,rationale:p.rationale||'',angleHint:p.angle_hint||''});
+  save(); renderPainBank(); updateBadges();
+  emit('pain.added',{text:p.text,source:'AI Phân tích đa chiều',persona:p.persona,priority:p.priority});
+}
+function pushAllSuggestedPains(){
+  const pains=S.marketInsights?.suggested_pains||[]; let added=0;
+  pains.forEach(p=>{ if(p.text && !S.pains.find(x=>x.text===p.text)){
+    S.pains.push({id:uid(),text:p.text,persona:p.persona||'Chưa phân loại',priority:p.priority||'medium',source:'AI Phân tích đa chiều',date:today(),usedCount:0,rationale:p.rationale||'',angleHint:p.angle_hint||''});
+    added++;
+  }});
+  save(); renderPainBank(); updateBadges();
+  alert(`✅ Đã push ${added} pain vào Bank.`);
+}
+function renderMarketIntel(){
+  updateProfileStatus(); renderCompetitors();
+  if(S.marketInsights) renderMarketInsights(S.marketInsights);
+}
+
+// ============================================================
+// ===== RBL KNOWLEDGE BASE — dùng cho cả Playbook & prompt AI
+// ============================================================
+const RBL_KB = {
+  funnel: [
+    {n:1, name:'Tiếp cận', cust:'Lướt — thuật toán đẩy nội dung sang, khách chưa biết bạn', job:'Stop-the-scroll: 0.5s đầu khiến họ dừng', tool:'Reach, Impression, CPM', bench:'CPM 30-60K (beauty), 1-3% thấy→click', src:'FGC + UGC'},
+    {n:2, name:'Dừng lại', cust:'Dừng xem vài giây, đọc tiêu đề, xem hình', job:'Chạm đúng nỗi đau/mối quan tâm (kiến thức sai · FOMO · kết quả thật · giải trí)', tool:'Watch time, Completion rate', bench:'Completion 50%+ là tốt', src:'FGC + EGC'},
+    {n:3, name:'Theo dõi', cust:'"Kênh này hay, follow xem tiếp"', job:'Đăng đều, trả lời comment/DM trong 2-4h đầu, tạo thói quen', tool:'Follower mới/tuần, Follow rate', bench:'+50-200 follower/tháng organic', src:'FGC + EGC'},
+    {n:4, name:'Tin tưởng', cust:'Lưu bài, nhắn tin hỏi, comment, share — tín hiệu chín muồi nhất', job:'Trả DM nhanh (<1h), nội dung có giá trị thật, xây vị thế (không sales suốt)', tool:'DM reply rate, Save, Share', bench:'—', src:'EGC + UGC'},
+    {n:5, name:'Dẫn về', cust:'"Thích mà không mua" vì không biết bước tiếp theo', job:'CTA RÕ RÀNG (bước bị bỏ qua nhiều nhất): click bio / reply / inbox / QR Zalo', tool:'CTR, CPC, Conversion', bench:'CTR 0.5-2% là tốt', src:'UGC + BGC'},
+    {n:6, name:'Chốt đơn', cust:'Mua / đặt lịch / ký', job:'Gắn tên kênh-người bán với đơn để biết kênh nào sinh tiền', tool:'Revenue, Đơn, AOV, CPA, Close rate', bench:'Close rate 30-50% (lead từ ads)', src:'UGC + BGC'}
+  ],
+  contentSources: [
+    {k:'UGC', name:'User Generated', who:'Khách tự quay/viết review', pro:'Tin cậy cao nhất, reach tốt, cost thấp', funnel:'Tiếp cận · Nuôi dưỡng · Chuyển đổi'},
+    {k:'EGC', name:'Expert Generated', who:'Nhân viên/creator/chuyên gia', pro:'Kiểm soát chất lượng, xây vị thế chuyên gia', funnel:'Tương tác (MOFU) · Nuôi dưỡng'},
+    {k:'FGC', name:'Founder Generated', who:'Founder/CEO trực tiếp', pro:'Reach cao nhất (5-10x fanpage), trust mạnh nhất, lợi thế SME', funnel:'Tiếp cận · Tương tác · Nuôi dưỡng'},
+    {k:'BGC', name:'Brand Generated', who:'Fanpage/team marketing', pro:'Kiểm soát 100% message, lưu trữ permanent (cần Ads bổ trợ, reach <2%)', funnel:'Chuyển đổi (BOFU) · Thông báo'}
+  ],
+  pillars: [
+    {name:'Thu hút', goal:'Đưa người mới vào', ratio:'30%', step:'Tiếp cận + Tương tác', src:'FGC + UGC'},
+    {name:'Chuyên môn', goal:'Xây vị thế', ratio:'30%', step:'Tương tác + Thu thập', src:'EGC + FGC'},
+    {name:'Chuyển đổi', goal:'Ra đơn', ratio:'25%', step:'Nuôi dưỡng + Chuyển đổi', src:'UGC + BGC'},
+    {name:'Kết nối', goal:'Xây quan hệ', ratio:'15%', step:'Giữ chân + Repeat', src:'FGC + EGC'}
+  ],
+  pillarRules: [
+    'Không 2 bài chuyển đổi liên tiếp — khách mệt, mute account',
+    'Mỗi bài bán cần 2 bài giá trị đi trước — xây trust rồi mới bán',
+    'Cùng chủ đề, khác format qua kênh — tái sử dụng content'
+  ],
+  weekly: [
+    {d:'T2', pillar:'Thu hút', type:'Video ngắn mẹo', src:'FGC', ch:'TikTok/Reels', fmt:'15-30s'},
+    {d:'T3', pillar:'Chuyên môn', type:'Bài kiến thức', src:'EGC', ch:'FB cá nhân', fmt:'Carousel'},
+    {d:'T4', pillar:'Thu hút', type:'Ảnh + caption', src:'FGC', ch:'FB Founder', fmt:'1 hình + 100 từ'},
+    {d:'T5', pillar:'Chuyển đổi', type:'Case study', src:'UGC + BGC', ch:'Fanpage', fmt:'3-5 hình + testimonial'},
+    {d:'T6', pillar:'Chuyên môn', type:'Video hướng dẫn', src:'EGC', ch:'TikTok', fmt:'30-60s'},
+    {d:'T7', pillar:'Kết nối', type:'Hậu trường', src:'FGC', ch:'FB Founder', fmt:'3-4 hình chill'},
+    {d:'CN', pillar:'Chuyên môn', type:'Tổng hợp tuần', src:'BGC', ch:'IG Reel', fmt:'15s animation'}
+  ],
+  hookFormula: '[Specific Identity] + [Pain/FOMO] + [Named Tool] + [Free CTA]',
+  hookExample: '"Fullstack Marketer + đang bị AI thay thế + Claude/ChatGPT + nhận miễn phí" → CPL 11K, 272 leads, frequency 1.87',
+  hookTypes: ['Pain (nỗi đau)','Curiosity (tò mò)','Social Proof (số liệu/testimonial)','Education (kiến thức ít người biết)','Contrarian (nói ngược)'],
+  insight3: [
+    {layer:'Tầng 1 — Hot prospect', desc:'Sắp mua, đang so sánh nhà cung cấp', voice:'"Chỗ này có thật sự khác chỗ kia không?"', need:'Trigger mua + xử objection cuối'},
+    {layer:'Tầng 2 — Warm prospect', desc:'Biết có giải pháp, đang cân nhắc', voice:'"Cái này hợp với mình không?"', need:'So sánh, bằng chứng để tiến lên Tầng 1'},
+    {layer:'Tầng 3 — Cold prospect', desc:'Mới nhận ra vấn đề', voice:'"Mình đang gặp vấn đề này à?"', need:'Edu content, đặt tên cho nỗi đau'}
+  ],
+  insightRule: 'Insight KHÔNG phải demographic. Insight = câu nói nội tâm khách nói với chính mình lúc 2h sáng khi lo lắng. Pain mạnh nhất = vấn đề tâm lý lớn nhất (rộng đủ build brand, cụ thể đủ build content).',
+  adsBenchmark: [
+    {ind:'F&B', cpl:'15-40K', target:'<20K'},
+    {ind:'Fashion', cpl:'30-80K', target:'<50K'},
+    {ind:'Beauty/Spa', cpl:'80-200K', target:'<100K'},
+    {ind:'Clinic', cpl:'150-300K', target:'<200K'},
+    {ind:'Giáo dục', cpl:'50-150K', target:'<80K'},
+    {ind:'B2B', cpl:'200-600K', target:'<400K'}
+  ],
+  freqRules: [
+    {f:'<1.5', state:'Fresh', ctr:'Tăng', act:'Giữ, có thể scale'},
+    {f:'1.5-2.0', state:'Tối ưu', ctr:'Ổn định', act:'Theo dõi'},
+    {f:'2.0-2.5', state:'Fatigue bắt đầu', ctr:'Giảm', act:'Test creative mới'},
+    {f:'>2.5', state:'Fatigue nặng', ctr:'Xuống', act:'Dừng, replace creative'}
+  ]
+};
+// Chuỗi tóm tắt nhồi vào prompt AI để output bám khung RBL
+const RBL_KB_PROMPT = `KHUNG RBL (bắt buộc bám theo):
+• FUNNEL 6 BƯỚC: 1.Tiếp cận(stop-the-scroll) 2.Dừng lại(chạm nỗi đau) 3.Theo dõi 4.Tin tưởng 5.Dẫn về(CTA rõ — hay bị bỏ qua) 6.Chốt đơn.
+• PAIN ĐÚNG = nỗi đau/khó chịu/rào cản tâm lý thật, KHÔNG phải câu hỏi mua ("mua ở đâu","giá bao nhiêu") hay khen chung chung.
+• INSIGHT = câu nói nội tâm khách lúc 2h sáng, không phải demographic. 3 tầng: Hot(so sánh nhà cung cấp) / Warm(cân nhắc) / Cold(mới nhận ra vấn đề).
+• HOOK CHUẨN: [Specific Identity]+[Pain/FOMO]+[Named Tool]+[Free CTA]. Tránh claim chung ("hiệu quả 100%","công nghệ dẫn đầu").
+• 4 NGUỒN CONTENT: UGC(tin cậy) EGC(chuyên gia) FGC(founder, reach cao nhất) BGC(brand, cần ads).
+• ADS: CPL theo ngành; frequency >2.5 = fatigue phải thay creative.`;
+
+// ============================================================
+// ===== PLAYBOOK — render 5 module
+// ============================================================
+function showPlaybook(which){
+  ['funnel','hook','insight','pillar','ads'].forEach(k=>{
+    const p=document.getElementById('pb-'+k); if(p)p.classList.toggle('hidden',k!==which);
+  });
+  document.querySelectorAll('.pb-tab-btn').forEach(b=>{
+    const on=b.getAttribute('data-pb')===which;
+    b.classList.toggle('btn-primary',on); b.classList.toggle('btn-ghost',!on);
+  });
+  if(which==='funnel')renderPbFunnel();
+  if(which==='hook')renderPbHook();
+  if(which==='insight')renderPbInsight();
+  if(which==='pillar')renderPbPillar();
+  if(which==='ads')renderPbAds();
+}
+function renderPlaybook(){ showPlaybook('funnel'); } // gọi khi mở tab
+
+function renderPbFunnel(){
+  const el=document.getElementById('pb-funnel'); if(!el)return;
+  const rows=RBL_KB.funnel.map(s=>`<tr>
+    <td><span class="badge badge-purple">${s.n}</span></td>
+    <td style="font-weight:700;">${esc(s.name)}</td>
+    <td style="font-size:12px;color:var(--muted);max-width:220px;">${esc(s.cust)}</td>
+    <td style="font-size:12px;max-width:240px;">${esc(s.job)}</td>
+    <td style="font-size:11px;color:var(--cyan);">${esc(s.tool)}</td>
+    <td style="font-size:11px;color:var(--muted);">${esc(s.bench)}</td>
+    <td><span class="badge badge-muted">${esc(s.src)}</span></td>
+  </tr>`).join('');
+  el.innerHTML=`<div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="fa fa-filter" style="color:var(--purple);"></i> Phễu 6 bước — Hành trình khách hàng</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Mỗi pain/angle nên gắn đúng 1 bước phễu. Bước 5 (Dẫn về) là chỗ bị bỏ qua nhiều nhất.</div>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Bước</th><th>Khách đang làm</th><th>Nhiệm vụ của bạn</th><th>Tool đo</th><th>Benchmark</th><th>Nguồn</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-users" style="color:var(--orange);"></i> 4 nguồn nội dung</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Loại</th><th>Tên</th><th>Ai tạo</th><th>Ưu điểm</th><th>Dùng ở bước phễu</th></tr></thead><tbody>
+    ${RBL_KB.contentSources.map(c=>`<tr><td><span class="badge badge-cyan">${c.k}</span></td><td>${esc(c.name)}</td><td style="font-size:12px;color:var(--muted);">${esc(c.who)}</td><td style="font-size:12px;">${esc(c.pro)}</td><td style="font-size:12px;color:var(--muted);">${esc(c.funnel)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderPbHook(){
+  const el=document.getElementById('pb-hook'); if(!el)return;
+  const painOpts=(S.pains||[]).slice(0,40).map((p,i)=>`<option value="${esc(p.text)}">${esc(p.text.slice(0,60))}</option>`).join('');
+  const prof=S.productProfile||{};
+  el.innerHTML=`<div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="fa fa-bolt" style="color:var(--yellow);"></i> Hook Generator — công thức Hero Creative</div>
+    <div class="alert alert-info" style="margin:8px 0 14px;"><i class="fa fa-info-circle"></i> Công thức: <b>${esc(RBL_KB.hookFormula)}</b><br><span style="font-size:12px;color:var(--muted);">VD thực: ${esc(RBL_KB.hookExample)}</span></div>
+    <div class="form-row g2">
+      <div class="form-group"><label>Identity (chân dung cụ thể)</label><input id="hk-identity" placeholder="VD: Dân văn phòng 30+" value="${esc(prof.audience||'')}"></div>
+      <div class="form-group"><label>Named Tool / Sản phẩm</label><input id="hk-tool" placeholder="VD: ${esc(prof.name||'Tên SP')}" value="${esc(prof.name||'')}"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;"><label>Pain / FOMO — lấy từ Pain Bank hoặc tự nhập</label>
+      <select id="hk-pain-select" onchange="document.getElementById('hk-pain').value=this.value" style="margin-bottom:6px;"><option value="">— chọn pain có sẵn —</option>${painOpts}</select>
+      <input id="hk-pain" placeholder="VD: đang bị đau lưng sau 8h ngồi"></div>
+    <div class="form-row g2">
+      <div class="form-group"><label>Free CTA</label><input id="hk-cta" placeholder="VD: nhận tư vấn miễn phí"></div>
+      <div class="form-group" style="display:flex;align-items:end;gap:8px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="buildHookManual()"><i class="fa fa-wrench"></i> Ghép hook</button>
+        <button class="btn btn-warn" style="flex:1;" onclick="buildHookAI(this)"><i class="fa fa-wand-magic-sparkles"></i> AI viết 5 hook</button>
+      </div>
+    </div>
+    <div id="hk-output" style="margin-top:10px;"></div>
+  </div>`;
+}
+function buildHookManual(){
+  const id=document.getElementById('hk-identity').value.trim();
+  const pain=document.getElementById('hk-pain').value.trim();
+  const tool=document.getElementById('hk-tool').value.trim();
+  const cta=document.getElementById('hk-cta').value.trim();
+  if(!id||!pain){ alert('Cần ít nhất Identity và Pain.'); return; }
+  const hook=`${id} — và tôi đang ${pain}${tool?`. ${tool}`:''} đã thay đổi điều đó${cta?` → ${cta}`:''}.`;
+  document.getElementById('hk-output').innerHTML=`<div class="alert alert-info"><b>Hook ghép:</b><br>${esc(hook)}</div>`;
+}
+async function buildHookAI(btn){
+  const id=document.getElementById('hk-identity').value.trim();
+  const pain=document.getElementById('hk-pain').value.trim();
+  const tool=document.getElementById('hk-tool').value.trim();
+  const cta=document.getElementById('hk-cta').value.trim();
+  if(!id||!pain){ alert('Cần ít nhất Identity và Pain.'); return; }
+  const old=btn.innerHTML; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang viết...'; btn.disabled=true;
+  const out=document.getElementById('hk-output');
+  try{
+    const sys=`Bạn là copywriter TikTok Shop. Viết 5 hook (0-3 giây) theo công thức ${RBL_KB.hookFormula}. Mỗi hook 1 dòng, đa dạng kiểu: ${RBL_KB.hookTypes.join(', ')}. Trả JSON: {"hooks":["...","..."]}.\n${RBL_KB_PROMPT}`;
+    const usr=`Identity: ${id}\nPain/FOMO: ${pain}\nTool: ${tool||'(chưa có)'}\nCTA: ${cta||'(chưa có)'}`;
+    const res=await aiosLLM(sys,usr,800);
+    let hooks=null; if(res){ const j=parseJSONLoose(res); hooks=j?.hooks; }
+    if(!hooks||!hooks.length){
+      hooks=RBL_KB.hookTypes.map(t=>`(${t}) ${id} ${pain}${tool?` — ${tool}`:''}${cta?` → ${cta}`:''}`);
+      out.innerHTML=`<div class="alert alert-info" style="border-color:var(--yellow);"><i class="fa fa-triangle-exclamation"></i> Offline — mẫu theo công thức (cấu hình API key để AI viết tốt hơn):</div>`;
+    } else out.innerHTML='';
+    out.innerHTML+='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Hook</th></tr></thead><tbody>'+
+      hooks.map((h,i)=>`<tr><td>${i+1}</td><td>${esc(h)}</td></tr>`).join('')+'</tbody></table></div>';
+  }catch(e){ out.innerHTML=`<div class="alert alert-info">Lỗi: ${esc(e.message)}</div>`; }
+  finally{ btn.innerHTML=old; btn.disabled=false; }
+}
+
+function renderPbInsight(){
+  const el=document.getElementById('pb-insight'); if(!el)return;
+  el.innerHTML=`<div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="fa fa-user-group" style="color:var(--cyan);"></i> Customer Insight — 3 tầng persona</div>
+    <div class="alert alert-info" style="margin:8px 0 14px;font-size:12px;">${esc(RBL_KB.insightRule)}</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Tầng</th><th>Mô tả</th><th>Câu nói nội tâm</th><th>Cần gì để tiến lên</th></tr></thead><tbody>
+    ${RBL_KB.insight3.map(l=>`<tr><td style="font-weight:700;max-width:130px;">${esc(l.layer)}</td><td style="font-size:12px;color:var(--muted);">${esc(l.desc)}</td><td style="font-size:13px;color:var(--orange);">${esc(l.voice)}</td><td style="font-size:12px;">${esc(l.need)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderPbPillar(){
+  const el=document.getElementById('pb-pillar'); if(!el)return;
+  el.innerHTML=`<div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-layer-group" style="color:var(--purple);"></i> 4 Content Pillar</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Pillar</th><th>Mục đích</th><th>Tỉ trọng</th><th>Bước phễu</th><th>Nguồn</th></tr></thead><tbody>
+    ${RBL_KB.pillars.map(p=>`<tr><td style="font-weight:700;">${esc(p.name)}</td><td style="font-size:12px;color:var(--muted);">${esc(p.goal)}</td><td><span class="badge badge-cyan">${esc(p.ratio)}</span></td><td style="font-size:12px;">${esc(p.step)}</td><td><span class="badge badge-muted">${esc(p.src)}</span></td></tr>`).join('')}
+    </tbody></table></div>
+    <div style="margin-top:12px;font-size:13px;"><b>3 quy tắc vàng:</b><ul style="margin:6px 0 0;padding-left:18px;color:var(--muted);">${RBL_KB.pillarRules.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-calendar-week" style="color:var(--green);"></i> Lịch content mẫu 1 tuần</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Ngày</th><th>Pillar</th><th>Loại nội dung</th><th>Nguồn</th><th>Kênh</th><th>Format</th></tr></thead><tbody>
+    ${RBL_KB.weekly.map(w=>`<tr><td style="font-weight:700;">${esc(w.d)}</td><td>${esc(w.pillar)}</td><td style="font-size:12px;">${esc(w.type)}</td><td><span class="badge badge-cyan">${esc(w.src)}</span></td><td style="font-size:12px;color:var(--muted);">${esc(w.ch)}</td><td style="font-size:12px;color:var(--muted);">${esc(w.fmt)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderPbAds(){
+  const el=document.getElementById('pb-ads'); if(!el)return;
+  const indOpts=RBL_KB.adsBenchmark.map(b=>`<option value="${esc(b.ind)}">${esc(b.ind)} (CPL ${esc(b.cpl)}, target ${esc(b.target)})</option>`).join('');
+  el.innerHTML=`<div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-bullseye" style="color:var(--red);"></i> CPL Benchmark theo ngành (VN 2025)</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Ngành</th><th>CPL trung bình</th><th>Target scale</th></tr></thead><tbody>
+    ${RBL_KB.adsBenchmark.map(b=>`<tr><td style="font-weight:700;">${esc(b.ind)}</td><td>${esc(b.cpl)}</td><td><span class="badge badge-success">${esc(b.target)}</span></td></tr>`).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-gauge-high" style="color:var(--orange);"></i> Frequency & Creative Fatigue</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Frequency</th><th>Trạng thái</th><th>CTR</th><th>Hành động</th></tr></thead><tbody>
+    ${RBL_KB.freqRules.map(f=>`<tr><td><span class="badge ${f.f.includes('>2.5')?'badge-danger':f.f.includes('<1.5')?'badge-success':'badge-warn'}">${esc(f.f)}</span></td><td>${esc(f.state)}</td><td>${esc(f.ctr)}</td><td style="font-size:12px;">${esc(f.act)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px;"><i class="fa fa-calculator" style="color:var(--cyan);"></i> Quick Check — angle/creative của bạn</div>
+    <div class="form-row g4" style="align-items:end;">
+      <div class="form-group" style="margin-bottom:0;"><label>Ngành</label><select id="ads-ind">${indOpts}</select></div>
+      <div class="form-group" style="margin-bottom:0;"><label>CPL thực tế (VND)</label><input type="number" id="ads-cpl" placeholder="VD: 14000"></div>
+      <div class="form-group" style="margin-bottom:0;"><label>Frequency</label><input type="number" step="0.1" id="ads-freq" placeholder="VD: 1.9"></div>
+      <button class="btn btn-primary" style="height:38px;" onclick="adsCheck()"><i class="fa fa-bolt"></i> Chấm điểm</button>
+    </div>
+    <div id="ads-verdict" style="margin-top:12px;"></div>
+  </div>`;
+}
+function adsCheck(){
+  const ind=document.getElementById('ads-ind').value;
+  const cpl=parseFloat(document.getElementById('ads-cpl').value);
+  const freq=parseFloat(document.getElementById('ads-freq').value);
+  const out=document.getElementById('ads-verdict');
+  if(isNaN(cpl)){ out.innerHTML='<div class="alert alert-info">Nhập CPL.</div>'; return; }
+  const b=RBL_KB.adsBenchmark.find(x=>x.ind===ind);
+  const tgt=parseInt((b.target||'').replace(/[^0-9]/g,''))* (b.target.includes('K')?1000:1);
+  let verdict, cls, action;
+  if(cpl<=tgt){ verdict='WIN'; cls='badge-success'; action='Đạt target ngành → cân nhắc scale 20-30%.'; }
+  else if(cpl<=tgt*1.25){ verdict='ACCEPTABLE'; cls='badge-warn'; action='Trên target một chút → theo dõi, tối ưu creative.'; }
+  else { verdict='OPTIMIZE/PAUSE'; cls='badge-danger'; action='Cao hơn target nhiều → thay creative hoặc dừng.'; }
+  let fNote='';
+  if(!isNaN(freq)){
+    const fr=RBL_KB.freqRules.find(r=>{
+      if(r.f.startsWith('<'))return freq<parseFloat(r.f.slice(1));
+      if(r.f.startsWith('>'))return freq>parseFloat(r.f.slice(1));
+      const[a,c]=r.f.split('-').map(parseFloat); return freq>=a&&freq<=c;
+    });
+    if(fr)fNote=`<br><b>Frequency ${freq}:</b> ${esc(fr.state)} → ${esc(fr.act)}`;
+  }
+  out.innerHTML=`<div class="alert alert-info"><span class="badge ${cls}" style="font-size:13px;">${verdict}</span> &nbsp;CPL ${cpl.toLocaleString('vi-VN')}đ vs target ngành ${esc(b.target)} (${esc(ind)}).<br>${esc(action)}${fNote}</div>`;
+}
+
 // ===== NGHIỆM THU =====
 const NT_CRITERIA=[
   'Hook Rate >= 40%',
@@ -3709,36 +4443,22 @@ async function chatAsk(question){
     ? window.AIOS_CONFIG.n8nUrl + (window.AIOS_CONFIG.analyticsChat || '/webhook/aios-analytics-chat')
     : null;
 
-  const anthropicKey = window.AIOS_CONFIG?.anthropicApiKey || null;
-
-  let answer = '';
-
-  try {
-    if(anthropicKey){
-      // Direct Anthropic call
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{
-          'x-api-key': anthropicKey,
-          'anthropic-version':'2023-06-01',
-          'content-type':'application/json'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          system: `Bạn là Analytics AI của hệ thống ANGLE WIN AIOS — chuyên phân tích dữ liệu content TikTok.
+  const _llm = getLLMSettings();
+  const _sysPrompt = `Bạn là Analytics AI của hệ thống ANGLE WIN AIOS — chuyên phân tích dữ liệu content TikTok.
 Bạn có quyền truy cập vào toàn bộ dữ liệu workspace hiện tại dưới dạng JSON.
 Trả lời ngắn gọn, súc tích, dùng số liệu cụ thể từ dữ liệu.
 Dùng emoji và format markdown nhẹ để dễ đọc.
 Nếu dữ liệu chưa đủ để trả lời chính xác, nói rõ cần thêm dữ liệu gì.
 
 DATA CONTEXT:
-${contextStr}`,
-          messages:[{role:'user',content:question}]
-        })
-      });
-      const data = await res.json();
-      answer = data.content?.[0]?.text || 'Không thể lấy phản hồi từ AI.';
+${contextStr}`;
+
+  let answer = '';
+
+  try {
+    if(LLM_PROVIDERS[_llm.provider] && _llm.key){
+      // Gọi qua model đã chọn (Claude/GPT/Gemini/Groq/OpenRouter)
+      answer = await LLM_PROVIDERS[_llm.provider].call(_llm.key, _llm.model, _sysPrompt, question, 1024) || 'Không thể lấy phản hồi từ AI.';
     } else if(n8nWebhook){
       const res = await fetch(n8nWebhook, {
         method:'POST',
