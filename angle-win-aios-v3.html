@@ -2041,17 +2041,25 @@ function llmActiveLabel(){
   return 'Chưa kết nối';
 }
 
-// Gọi LLM theo provider đã chọn → fallback n8n → offline(null cho heuristic)
+// Gọi LLM: provider đã chọn → tự fallback sang provider khác có key → n8n → offline(null)
 async function llmCall(system, user, maxTokens){
   const s=getLLMSettings();
-  const prov=LLM_PROVIDERS[s.provider];
-  if(prov && s.key){ return await prov.call(s.key, s.model, system, user, maxTokens); }
+  const order=[];
+  if(LLM_PROVIDERS[s.provider] && s.key) order.push([s.provider,s.model,s.key]);
+  for(const [pk,kv] of Object.entries(s.keys||{})){ // dự phòng: provider khác đã lưu key
+    if(pk!==s.provider && kv && LLM_PROVIDERS[pk]) order.push([pk,LLM_PROVIDERS[pk].models[0],kv]);
+  }
+  for(let i=0;i<order.length;i++){
+    const [pk,model,key]=order[i];
+    try{ return await LLM_PROVIDERS[pk].call(key,model,system,user,maxTokens); }
+    catch(e){ console.warn('[llm fallback]',pk,e.message); if(i===order.length-1 && !window.AIOS_CONFIG?.n8nUrl) {/* để rơi xuống n8n/offline */} }
+  }
   const c=window.AIOS_CONFIG||{};
   const n8n = c.n8nUrl ? c.n8nUrl + (c.aiTaskPath||'/webhook/aios-ai-task') : null;
   if(n8n){
-    const res=await fetch(n8n,{method:'POST',headers:{'Content-Type':'application/json'},
+    try{ const res=await fetch(n8n,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({system,user,workspace_id:currentWS?.id||'default'})});
-    const d=await res.json(); return d.answer||d.text||'';
+      const d=await res.json(); return d.answer||d.text||''; }catch(e){ console.warn('[llm n8n]',e.message); }
   }
   return null;
 }
@@ -4045,6 +4053,7 @@ const _localGenerateQueue = generateQueue;
 // MODULE B: dùng SSE — cập nhật trạng thái "suy nghĩ" của AI ngay trên nút bấm
 generateQueue = async function(){
   if(!requireWs() || !requireEditor()) return;
+  if(getLLMSettings().key){ return generateQueueLLM(); }  // ưu tiên model đã chọn (Claude/GPT/Gemini/Groq/OpenRouter)
   if(!AIOS.online){ return _localGenerateQueue(); }
   const btn = document.getElementById('btn-generate');
   const orig = btn ? btn.innerHTML : '';
@@ -4084,6 +4093,45 @@ generateQueue = async function(){
     if(btn){ btn.disabled = false; btn.innerHTML = orig; }
   }
 };
+
+// MODULE B+: sinh angle bằng MODEL ĐÃ CHỌN + khung RBL (dùng khi có API key)
+async function generateQueueLLM(){
+  const pains=(S.pains||[]).filter(p=>!p.usedCount);
+  const pool=pains.length?pains:(S.pains||[]);
+  if(!pool.length){ alert('Cần thêm pains vào Pain Bank trước'); return; }
+  const btn=document.getElementById('btn-generate');
+  const orig=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> AI đang viết angle...'; }
+  try{
+    const prof=S.productProfile||{};
+    const painList=pool.slice(0,12).map((p,i)=>`${i+1}. ${p.text} [persona:${p.persona||'?'} · ${p.priority||'medium'}]`).join('\n');
+    const sys=`Bạn là AI Factory của ANGLE WIN AIOS — viết angle quảng cáo TikTok Shop từ Pain Bank.
+Mỗi angle gồm 1 hook (0-3 giây) bám công thức ${RBL_KB.hookFormula}, gắn đúng tầng phễu (1-6), đa dạng kiểu hook.
+Trả về DUY NHẤT JSON: {"angles":[{"hook":"...","persona":"...","pain":"...","timing":"khi nào","benefit":"lợi ích chính","proof":"Before/After|Testimonial|Demo|Statistics|Challenge","cta":"...","funnelStep":1,"quality":7}]}
+${RBL_KB_PROMPT}`;
+    const usr=`SẢN PHẨM: ${prof.name||S.product||'(chưa đặt tên)'} | Tệp khách: ${prof.audience||'?'} | USP: ${prof.usp||'?'}
+NỀN TẢNG: ${currentPlatform}
+PAIN BANK:\n${painList}\n\nViết 5 angle, ưu tiên pain priority cao.`;
+    const out=await aiosLLM(sys,usr,2200);
+    let angles=null; if(out){ const j=parseJSONLoose(out); angles=j?.angles; }
+    if(!angles||!angles.length){ setEl('queue-subtitle','Model không trả kết quả — fallback template'); return _localGenerateQueue(); }
+    const newQueue=angles.slice(0,8).map(a=>({
+      id:uid(), hook:a.hook||'', p1:a.persona||'', p2:(a.pain||'').slice(0,80),
+      p3:a.timing||'', p4:a.benefit||'', p5:a.proof||'Demo', p6:a.cta||PLATFORM_CTA[currentPlatform]||'Link trong bio',
+      platform:currentPlatform, funnelStep:a.funnelStep||null,
+      qc:Math.max(1,Math.min(10,parseInt(a.quality)||7)),
+      status:'pending', reason:'', ts:now(),
+      painSource:(a.pain||'').slice(0,80), sourceTag:`AI ${llmActiveLabel()} · ${currentPlatform}`
+    }));
+    S.approvalQueue=[...S.approvalQueue,...newQueue];
+    save(); renderQueue(); updateBadges();
+    emit('angle.created',{count:newQueue.length,via:llmActiveLabel()});
+    const h=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    setEl('queue-subtitle',`${newQueue.length} angles (${llmActiveLabel()}) — ${h}`);
+  }catch(e){
+    setEl('queue-subtitle','Lỗi AI: '+(e.message||e)+' — fallback template'); _localGenerateQueue();
+  }finally{ if(btn){ btn.disabled=false; btn.innerHTML=orig; } }
+}
 
 const _localApproveAngle = approveAngle;
 approveAngle = function(id){
@@ -4456,9 +4504,9 @@ ${contextStr}`;
   let answer = '';
 
   try {
-    if(LLM_PROVIDERS[_llm.provider] && _llm.key){
-      // Gọi qua model đã chọn (Claude/GPT/Gemini/Groq/OpenRouter)
-      answer = await LLM_PROVIDERS[_llm.provider].call(_llm.key, _llm.model, _sysPrompt, question, 1024) || 'Không thể lấy phản hồi từ AI.';
+    if(_llm.key){
+      // Gọi qua model đã chọn (có auto-fallback sang provider khác có key)
+      answer = await llmCall(_sysPrompt, question, 1024) || 'Không thể lấy phản hồi từ AI.';
     } else if(n8nWebhook){
       const res = await fetch(n8nWebhook, {
         method:'POST',
