@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ ANGLE WIN AIOS — AI Operating System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080810;--surface:#0f1018;--card:#161622;--border:#252535;
+  --text:#e2e8f0;--muted:#64748b;
+  --cyan:#38bdf8;--purple:#a78bfa;--green:#4ade80;--red:#f87171;
+  --yellow:#facc15;--orange:#fb923c;--win:#22c55e;--flop:#ef4444;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+/* SIDEBAR */
+#sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.logo h1{font-size:15px;font-weight:800;letter-spacing:.05em;color:#fff}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.logo-badge{display:inline-block;background:var(--yellow);color:#000;font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;margin-top:6px}
+.nav-sec{padding:14px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 6px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .12s}
+.nav-item:hover{background:#1f2035;color:var(--text)}
+.nav-item.active{background:#1a1b30;color:#fff}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.nav-badge{margin-left:auto;background:#252535;color:var(--muted);font-size:10px;padding:1px 6px;border-radius:999px;min-width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:10px 14px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);line-height:1.7}
+/* MAIN */
+#main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(15,16,24,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:11px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-sub{font-size:11px;color:var(--muted)}
+.status-dot{width:7px;height:7px;background:var(--win);border-radius:50%;animation:pulse 2s infinite;margin-right:6px;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.content{padding:22px 24px;flex:1}
+/* TABS */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+/* STAT */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;letter-spacing:.03em}
+.stat-val{font-size:30px;font-weight:800}
+.stat-sub{font-size:11px;margin-top:3px}
+.up{color:var(--win)}.down{color:var(--flop)}
+/* PIPELINE */
+.pipeline{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 0}
+.p-stage{display:flex;flex-direction:column;min-width:150px;padding:14px 12px;border-radius:10px;border:1.5px solid;flex-shrink:0}
+.p-stage h4{font-size:12px;font-weight:700;margin-bottom:8px}
+.p-stage ul{list-style:none;font-size:11px;color:var(--muted)}
+.p-stage ul li{margin-bottom:3px}
+.p-stage ul li::before{content:"▸ "}
+.p-arrow{color:var(--muted);font-size:16px;flex-shrink:0;display:flex;align-items:center;padding:0 6px}
+/* FORMS */
+.fg{margin-bottom:14px}
+.flabel{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.fc{width:100%;background:#0c0d16;border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;transition:border-color .12s;font-family:inherit}
+.fc:focus{border-color:var(--purple)}
+textarea.fc{resize:vertical;min-height:80px}
+select.fc{cursor:pointer}
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .12s;font-family:inherit}
+.btn-p{background:#5b21b6;color:#fff}.btn-p:hover{background:#6d28d9}
+.btn-c{background:#0e4a72;color:var(--cyan);border:1px solid var(--cyan)}.btn-c:hover{background:#0d5d8f}
+.btn-g{background:#14532d;color:var(--green);border:1px solid var(--green)}.btn-g:hover{background:#166534}
+.btn-r{background:#7f1d1d;color:var(--red);border:1px solid var(--red)}
+.btn-gh{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-gh:hover{background:var(--card);color:var(--text)}
+.btn-y{background:#422006;color:var(--yellow);border:1px solid var(--yellow)}
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;transition:all .12s;border:1px solid}
+.tag-pain{background:#1a0a0a;color:#fca5a5;border-color:#7f1d1d}
+.tag-pain:hover,.tag-pain.sel{background:#7f1d1d;color:#fff}
+.tag-per{background:#0a0a1a;color:#a5b4fc;border-color:#1e1b4b}
+.tag-per:hover,.tag-per.sel{background:#1e1b4b;color:#fff}
+/* STAGE TAGS */
+.stag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+/* SIGNAL CARDS */
+.sig-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.sig-card.gborder{border-color:var(--win)}.sig-card.rborder{border-color:var(--flop)}
+.sig-val{font-size:36px;font-weight:800;margin:8px 0}
+.sig-label{font-size:12px;color:var(--muted)}
+/* ANGLE OUTPUT */
+.angle-out{background:#09091a;border:1px solid var(--purple);border-radius:12px;padding:18px;font-size:13px;line-height:1.7;min-height:180px}
+.ptag{display:inline-block;background:#3b0764;color:#d8b4fe;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:4px}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.tbl td{padding:11px 12px;border-bottom:1px solid #1a1a2a;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#1a1a2a}
+/* BADGES */
+.bw{background:#14532d;color:var(--win);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.bf{background:#450a0a;color:var(--flop);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.bt{background:#1a1200;color:var(--yellow);padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700}
+/* PROGRESS */
+.pbar{width:100%;height:5px;background:#252535;border-radius:999px;overflow:hidden;margin-top:6px}
+.pfill{height:100%;border-radius:999px;transition:width .5s ease}
+/* CHECKLIST */
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px;border-bottom:1px solid #1a1a2a}
+.chk:last-child{border-bottom:none}
+.chk-ico{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.chk-pass{background:#14532d;color:var(--win)}.chk-fail{background:#450a0a;color:var(--flop)}
+/* ALERTS */
+.al{padding:11px 16px;border-radius:8px;font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.al i{margin-top:2px;flex-shrink:0}
+.al-y{background:#1a1200;border:1px solid #713f12;color:var(--yellow)}
+.al-g{background:#0a1a0f;border:1px solid #14532d;color:var(--green)}
+.al-r{background:#1a0505;border:1px solid #7f1d1d;color:var(--red)}
+/* MATRIX */
+.mx-cell{padding:7px 4px;border:1px solid var(--border);border-radius:6px;font-size:10px;text-align:center;background:#0f1018;cursor:pointer;transition:all .12s}
+.mx-cell:hover{border-color:var(--purple);background:#1a1b2e}
+.mx-cell.gen{border-color:var(--green);background:#0a1a0f;color:var(--green)}
+/* DIVIDER */
+.div{height:1px;background:var(--border);margin:16px 0}
+/* TICKER */
+.ticker{background:#09091a;border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.ticker-dot{width:6px;height:6px;background:var(--win);border-radius:50%;flex-shrink:0;animation:pulse 2s infinite}
+/* HOOK ITEM */
+.hook-item{display:flex;align-items:flex-start;gap:10px;padding:10px;background:#0f1018;border-radius:8px;border:1px solid var(--border)}
+.hook-num{background:#3b0764;color:#d8b4fe;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:999px}
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR ==================== -->
+<div id="sidebar">
+  <div class="logo">
+    <h1>⚡ ANGLE WIN</h1>
+    <div class="logo-sub">AI Operating System</div>
+    <span class="logo-badge">AUTO v1.0</span>
+  </div>
+
+  <div class="nav-sec">Pipeline</div>
+  <div class="nav-item active" onclick="showTab('overview')">
+    <span class="nav-dot" style="background:#475569"></span> Tổng Quan
+  </div>
+  <div class="nav-item" onclick="showTab('b1')">
+    <span class="nav-dot" style="background:var(--cyan)"></span> B1 — Sensors
+    <span class="nav-badge" id="bd-b1">0</span>
+  </div>
+  <div class="nav-item" onclick="showTab('b2')">
+    <span class="nav-dot" style="background:var(--purple)"></span> B2 — AI Factory
+  </div>
+  <div class="nav-item" onclick="showTab('b3')">
+    <span class="nav-dot" style="background:var(--green)"></span> B3 — Thực Chiến
+    <span class="nav-badge" id="bd-b3">0</span>
+  </div>
+  <div class="nav-item" onclick="showTab('b4')">
+    <span class="nav-dot" style="background:var(--red)"></span> B4 — Kết Quả
+    <span class="nav-badge" id="bd-win">0</span>
+  </div>
+
+  <div class="nav-sec">Hệ Thống</div>
+  <div class="nav-item" onclick="showTab('auto')">
+    <span class="nav-dot" style="background:var(--yellow)"></span> Auto Loop
+  </div>
+  <div class="nav-item" onclick="showTab('auto')">
+    <span class="nav-dot" style="background:var(--flop)"></span> Blacklist
+    <span class="nav-badge" id="bd-bl">0</span>
+  </div>
+
+  <div class="sidebar-footer">
+    Stack: n8n · Chroma · CrewAI<br>
+    Scraper: Firecrawl · GPT-Researcher<br>
+    Agents: Autogen · Dify
+  </div>
+</div>
+
+<!-- ==================== MAIN ==================== -->
+<div id="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="tb-title">Tổng Quan</div>
+      <div class="topbar-sub" id="tb-sub">Hệ thống giám sát tự động — Angle Win AIOS</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;font-size:12px;color:var(--muted)">
+        <div class="status-dot"></div>System Online
+      </div>
+      <div style="font-size:12px;color:var(--muted)" id="clk"></div>
+      <button class="btn btn-p" onclick="showTab('b2')" style="padding:7px 14px;font-size:12px">+ Tạo Angle</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ============ OVERVIEW ============ -->
+    <div class="tab-panel active" id="tab-overview">
+
+      <div class="g4" style="margin-bottom:18px">
+        <div class="stat-card">
+          <div class="stat-label">Angles Đã Tạo</div>
+          <div class="stat-val" id="s-total">0</div>
+          <div class="stat-sub up">Tổng cộng</div>
+        </div>
+        <div class="stat-card" style="border-color:var(--win)">
+          <div class="stat-label">🏆 Angle Win</div>
+          <div class="stat-val up" id="s-win">0</div>
+          <div class="stat-sub up" id="s-wr">Win rate: 0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Hook Rate TB</div>
+          <div class="stat-val" id="s-hr">—</div>
+          <div class="stat-sub" style="color:var(--muted)">Target: >40%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pain Bank</div>
+          <div class="stat-val" id="s-pains">0</div>
+          <div class="stat-sub" style="color:var(--muted)">Nỗi đau thực tế</div>
+        </div>
+      </div>
+
+      <div class="ticker" style="margin-bottom:18px">
+        <div class="ticker-dot"></div>
+        <span id="ticker-txt">Hệ thống sẵn sàng — Bắt đầu nhập data reviews vào B1 Sensors để khởi động flywheel</span>
+      </div>
+
+      <!-- PIPELINE -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title">⚡ Content Flywheel Pipeline</div>
+        <div class="pipeline">
+          <div class="p-stage" style="border-color:var(--cyan);background:#09141f">
+            <span class="stag" style="color:var(--cyan);border-color:var(--cyan)">B1 Sensors</span>
+            <h4 style="color:var(--cyan)">Data Ingestion</h4>
+            <ul>
+              <li>CSKH Reviews → Pain</li>
+              <li>Scraping Trends</li>
+              <li>Ads Hook Rate/CPC</li>
+              <li>→ Vector DB (Chroma)</li>
+            </ul>
+          </div>
+          <div class="p-arrow">▶</div>
+          <div class="p-stage" style="border-color:var(--purple);background:#100922">
+            <span class="stag" style="color:var(--purple);border-color:var(--purple)">B2 AI Factory</span>
+            <h4 style="color:var(--purple)">Script Engine</h4>
+            <ul>
+              <li>6P Framework Brief</li>
+              <li>30 Hook Variations</li>
+              <li>QC Gate 5 tiêu chí</li>
+              <li>Brief KOC Chuẩn</li>
+            </ul>
+          </div>
+          <div class="p-arrow">▶</div>
+          <div class="p-stage" style="border-color:var(--green);background:#0a160d">
+            <span class="stag" style="color:var(--green);border-color:var(--green)">B3 Thực Chiến</span>
+            <h4 style="color:var(--green)">KOC Production</h4>
+            <ul>
+              <li>KOC Studio</li>
+              <li>Spark Ads Mồi</li>
+              <li>Analytics 3 Tín Hiệu</li>
+              <li>Lọc Win / Flop</li>
+            </ul>
+          </div>
+          <div class="p-arrow">▶</div>
+          <div class="p-stage" style="border-color:var(--red);background:#160909">
+            <span class="stag" style="color:var(--red);border-color:var(--red)">B4 Kết Quả</span>
+            <h4 style="color:var(--red)">Win Detection</h4>
+            <ul>
+              <li>🏆 WIN → x5 Budget</li>
+              <li>☠️ FLOP → Khám bệnh</li>
+              <li>Feed back B1</li>
+              <li>Clone Matrix 20 Video</li>
+            </ul>
+          </div>
+          <div class="p-arrow">↺</div>
+          <div class="p-stage" style="border-color:var(--yellow);background:#110b00;border-style:dashed">
+            <span class="stag" style="color:var(--yellow);border-color:var(--yellow)">Auto Loop</span>
+            <h4 style="color:var(--yellow)">n8n / Make</h4>
+            <ul>
+              <li>Alert Hết hàng</li>
+              <li>Blacklist Update</li>
+              <li>Agent Retraining</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-title">📊 Kết Quả Angle 7 Ngày</div>
+          <canvas id="chartW" height="190"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">🎯 3 Tín Hiệu Angle Win</div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px">① Hook Rate (Dừng scroll)</span>
+              <span style="font-size:12px;font-weight:700" id="ov-hr">—</span>
+            </div>
+            <div class="pbar"><div class="pfill" id="pf-hr" style="width:0%;background:var(--cyan)"></div></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Target: >40% | Câu rao đã thành công</div>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px">② Intent Comments (Hỏi mua)</span>
+              <span style="font-size:12px;font-weight:700" id="ov-ic">—</span>
+            </div>
+            <div class="pbar"><div class="pfill" id="pf-ic" style="width:0%;background:var(--purple)"></div></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">"Mua ở đâu?", "Giá bao nhiêu?" >10 cmts</div>
+          </div>
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:12px">③ Actual Sales (Đơn thật)</span>
+              <span style="font-size:12px;font-weight:700" id="ov-sa">—</span>
+            </div>
+            <div class="pbar"><div class="pfill" id="pf-sa" style="width:0%;background:var(--green)"></div></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">1 đơn thật > 100 comment khen hay</div>
+          </div>
+          <div class="div"></div>
+          <div style="font-size:11px;color:var(--muted);text-align:center">⚠️ Thiếu 1 trong 3 = Chưa Win</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span>📋 Angles Gần Đây</span>
+          <button class="btn btn-gh" style="padding:4px 10px;font-size:11px" onclick="showTab('b4')">Xem tất cả →</button>
+        </div>
+        <table class="tbl">
+          <thead><tr>
+            <th>Hook Mở Đầu</th><th>Persona</th><th>Pain</th><th>Hook Rate</th><th>Đơn</th><th>Status</th>
+          </tr></thead>
+          <tbody id="ov-tbl">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Chưa có angle. Bắt đầu ở B2 AI Factory →</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ B1 SENSORS ============ -->
+    <div class="tab-panel" id="tab-b1">
+      <div class="al al-y" style="margin-bottom:18px">
+        <i class="fas fa-satellite-dish"></i>
+        <span><strong>B1 Sensors:</strong> Nhập data thực tế từ CSKH, trends, ads. AI trích xuất Pain Points vào kho.</span>
+      </div>
+      <div class="g2" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-title"><span style="color:var(--cyan)">💬</span> CSKH Reviews & Comments</div>
+          <div class="fg">
+            <label class="flabel">Tên sản phẩm</label>
+            <input class="fc" id="in-prod" placeholder="VD: Gối tựa lưng xe hơi, Đai chống gù...">
+          </div>
+          <div class="fg">
+            <label class="flabel">Paste reviews / comments (mỗi dòng 1 review)</label>
+            <textarea class="fc" id="in-rev" style="min-height:130px" placeholder="VD: 'Ghế mình ngồi cứng quá, lưng đau mỏi không chịu được'&#10;'Dân văn phòng ngồi 8h/ngày mà không có gì đỡ lưng'&#10;'Ba hay đau lưng lắm, đặt gối này về ba thích lắm'"></textarea>
+          </div>
+          <button class="btn btn-c" onclick="analyzeReviews()"><i class="fas fa-brain"></i> Phân Tích Pain Points</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><span style="color:var(--cyan)">📈</span> Trends & Ads Data</div>
+          <div class="fg">
+            <label class="flabel">Từ khóa / slang đang trend (mỗi dòng)</label>
+            <textarea class="fc" id="in-trends" style="min-height:70px" placeholder="VD: đau lưng kinh khủng&#10;lái xe xa mỏi lưng&#10;ngồi mãi lưng cứng đơ"></textarea>
+          </div>
+          <div class="fg">
+            <label class="flabel">Hook Rate hiện tại (%)</label>
+            <input class="fc" id="in-hr" type="number" placeholder="VD: 28" min="0" max="100">
+          </div>
+          <div class="fg">
+            <label class="flabel">CPC hiện tại (VND)</label>
+            <input class="fc" id="in-cpc" type="number" placeholder="VD: 450">
+          </div>
+          <button class="btn btn-c" onclick="saveAds()"><i class="fas fa-save"></i> Lưu Ads Data</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title" style="justify-content:space-between">
+          <span><span style="color:var(--cyan)">🗄️</span> Pain Bank — Kho Nỗi Đau Thực Tế</span>
+          <span style="font-size:12px;color:var(--muted)" id="pain-cnt">0 pains</span>
+        </div>
+        <div id="pain-bank" style="display:flex;flex-wrap:wrap;gap:7px;min-height:50px;align-items:flex-start;margin-bottom:12px">
+          <span style="color:var(--muted);font-size:13px;align-self:center">Chưa có pain. Nhập reviews và phân tích.</span>
+        </div>
+        <div class="div" style="margin:10px 0"></div>
+        <div style="display:flex;gap:8px">
+          <input class="fc" id="man-pain" placeholder="Thêm pain thủ công..." style="flex:1">
+          <button class="btn btn-gh" onclick="addManualPain()">+ Thêm</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span style="color:var(--cyan)">👥</span> Persona Bank</div>
+        <div id="per-bank" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px"></div>
+        <div class="div" style="margin:10px 0"></div>
+        <div style="display:flex;gap:8px">
+          <input class="fc" id="new-per" placeholder="Thêm persona mới..." style="flex:1">
+          <button class="btn btn-gh" onclick="addPersona()">+ Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ B2 AI FACTORY ============ -->
+    <div class="tab-panel" id="tab-b2">
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title"><span style="color:var(--purple)">🤖</span> Công Thức 6P — Angle Generator</div>
+
+            <div class="fg">
+              <label class="flabel">P1 — Persona (Bán cho AI? — Phải CỤ THỂ)</label>
+              <select class="fc" id="p1">
+                <option value="">-- Chọn persona --</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">P2 — Pain (Khó chịu chuyện gì? — Lấy từ reviews THỰC TẾ)</label>
+              <select class="fc" id="p2">
+                <option value="">-- Chọn pain từ Pain Bank --</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">P3 — Moment (Cảnh quay CỤ THỂ — Cameraman bấm máy ngay)</label>
+              <input class="fc" id="p3" placeholder="VD: Cuối ngày làm việc, đứng dậy khỏi ghế, lưng cứng đơ">
+            </div>
+            <div class="fg">
+              <label class="flabel">P4 — Promise (Trạng thái khó chịu → Dễ chịu HƠN)</label>
+              <input class="fc" id="p4" placeholder="VD: Ngồi 8h mà lưng vẫn thẳng, không mỏi vai gáy">
+            </div>
+            <div class="fg">
+              <label class="flabel">P5 — Proof (Tắt tiếng khách vẫn hiểu sản phẩm làm gì)</label>
+              <select class="fc" id="p5">
+                <option value="">-- Chọn loại proof --</option>
+                <option>Demo thật (đổ nước, bóp, kéo giãn)</option>
+                <option>Trước / Sau (biến đổi rõ rệt)</option>
+                <option>So sánh (đặt cạnh sản phẩm thường)</option>
+                <option>Cận cảnh (zoom chất liệu, đường may)</option>
+                <option>Test tình huống (dùng thật khi đang lái xe)</option>
+                <option>Review thật (người dùng nói cảm nhận)</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="flabel">P6 — Pull-to-buy CTA (Gắn pain — KHÔNG "Mua ngay nhé")</label>
+              <input class="fc" id="p6" placeholder="VD: Ai ngồi máy tính cả ngày mà hay quên giữ dáng thì bấm xem — đang có voucher">
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-p" onclick="genAngle()"><i class="fas fa-magic"></i> Generate Angle</button>
+              <button class="btn btn-gh" onclick="autoFill()"><i class="fas fa-robot"></i> Auto-Fill từ Pain Bank</button>
+              <button class="btn btn-gh" onclick="clearForm()"><i class="fas fa-undo"></i> Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title" style="justify-content:space-between">
+              <span><span style="color:var(--purple)">✨</span> Angle Brief Output</span>
+              <span id="qc-badge"></span>
+            </div>
+            <div class="angle-out" id="angle-out">
+              <span style="color:var(--muted)">Điền 6P và bấm Generate → Brief angle xuất hiện ở đây</span>
+            </div>
+            <div id="qc-wrap" style="display:none;margin-top:14px">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:.05em">QC Gate — 5 Tiêu Chí Leader Duyệt</div>
+              <div id="qc-list"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between">
+              <span><span style="color:var(--purple)">🔥</span> Hook Variations (×30 Scale)</span>
+              <button class="btn btn-p" onclick="genHooks()" style="padding:5px 12px;font-size:11px">Generate 5 Hooks</button>
+            </div>
+            <div id="hooks-out" style="display:flex;flex-direction:column;gap:7px;min-height:50px">
+              <span style="color:var(--muted);font-size:13px">Generate angle trước.</span>
+            </div>
+            <div id="matrix-wrap" style="display:none;margin-top:16px">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Clone Matrix — 5 Hook × 4 Persona = 20 Videos</div>
+              <div id="matrix-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ B3 THỰC CHIẾN ============ -->
+    <div class="tab-panel" id="tab-b3">
+      <div class="al al-g" style="margin-bottom:18px">
+        <i class="fas fa-video"></i>
+        <span><strong>B3 Thực Chiến:</strong> Nhập kết quả analytics sau khi video lên sóng. Hệ thống phán định Win/Flop theo 3 Tín Hiệu.</span>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title"><span style="color:var(--green)">📊</span> Nhập Analytics — Đo 3 Tín Hiệu</div>
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:2;min-width:180px">
+            <label class="flabel">Chọn Angle Cần Kiểm Định</label>
+            <select class="fc" id="an-sel"><option value="">-- Chọn angle --</option></select>
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="flabel">Hook Rate (%)</label>
+            <input class="fc" id="an-hr" type="number" placeholder="0–100">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="flabel">Intent Comments</label>
+            <input class="fc" id="an-ic" type="number" placeholder="Số cmts hỏi mua">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label class="flabel">Đơn Hàng</label>
+            <input class="fc" id="an-sa" type="number" placeholder="Số đơn thực tế">
+          </div>
+          <button class="btn btn-g" onclick="submitAnalytics()"><i class="fas fa-check-double"></i> Kiểm Định</button>
+        </div>
+      </div>
+
+      <div class="g3" style="margin-bottom:18px">
+        <div class="sig-card" id="sig1">
+          <div class="sig-label">Tín Hiệu 1</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px">Hook Rate</div>
+          <div class="sig-val" id="sv1">—</div>
+          <div style="font-size:11px;color:var(--muted)">Khách dừng scroll</div>
+          <div style="font-size:10px;margin-top:6px;color:var(--muted)">Target: >40%</div>
+        </div>
+        <div class="sig-card" id="sig2">
+          <div class="sig-label">Tín Hiệu 2</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px">Intent Comments</div>
+          <div class="sig-val" id="sv2">—</div>
+          <div style="font-size:11px;color:var(--muted)">"Mua ở đâu?" / "Giá bao nhiêu?"</div>
+          <div style="font-size:10px;margin-top:6px;color:var(--muted)">Target: >10 comments</div>
+        </div>
+        <div class="sig-card" id="sig3">
+          <div class="sig-label">Tín Hiệu 3</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px">Actual Sales</div>
+          <div class="sig-val" id="sv3">—</div>
+          <div style="font-size:11px;color:var(--muted)">Đơn hàng thực tế</div>
+          <div style="font-size:10px;margin-top:6px;color:var(--muted)">1 đơn > 100 cmts khen</div>
+        </div>
+      </div>
+
+      <div id="verdict" style="display:none;margin-bottom:18px"></div>
+
+      <div class="card">
+        <div class="card-title"><span style="color:var(--green)">🎬</span> KOC Production Tracker</div>
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Angle</th><th>Hook Rate</th><th>Intent Cmts</th><th>Đơn</th><th>Verdict</th><th>Action</th></tr></thead>
+          <tbody id="prod-tbl"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Chưa có dữ liệu analytics.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ B4 KẾT QUẢ ============ -->
+    <div class="tab-panel" id="tab-b4">
+      <div class="g2" style="margin-bottom:18px;align-items:start">
+        <div class="card" style="border-color:var(--win)">
+          <div class="card-title">🏆 ANGLE WIN — Vít Ngân Sách ×5</div>
+          <div id="win-list"><span style="color:var(--muted);font-size:13px">Chưa có win. Test ở B3.</span></div>
+        </div>
+        <div class="card" style="border-color:var(--flop)">
+          <div class="card-title">☠️ FLOP — Cần Khám Bệnh</div>
+          <div id="flop-list"><span style="color:var(--muted);font-size:13px">Chưa có flop. Test ở B3.</span></div>
+        </div>
+      </div>
+
+      <div class="card" id="scale-sec" style="display:none;margin-bottom:18px;border-color:var(--win)">
+        <div class="card-title"><span style="color:var(--win)">📐</span> Clone Matrix — Nhân Bản Angle Win</div>
+        <div id="scale-det"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span style="color:var(--red)">📋</span> Tất Cả Angles</div>
+        <table class="tbl">
+          <thead><tr><th>Hook</th><th>Persona</th><th>Pain</th><th>QC</th><th>Hook Rate</th><th>Đơn</th><th>Status</th></tr></thead>
+          <tbody id="all-tbl"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Chưa có angle.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============ AUTO LOOP ============ -->
+    <div class="tab-panel" id="tab-auto">
+      <div class="al al-y" style="margin-bottom:18px">
+        <i class="fas fa-robot"></i>
+        <span><strong>Auto Loop:</strong> n8n webhooks, alerts tự động, blacklist negative prompts. Hệ thống tự vận hành 24/7.</span>
+      </div>
+      <div class="g2" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-title"><span style="color:var(--yellow)">⚡</span> n8n Webhook Config</div>
+          <div class="fg">
+            <label class="flabel">Webhook URL (n8n / Make)</label>
+            <input class="fc" id="wb-url" placeholder="https://your-n8n.com/webhook/angle-win">
+          </div>
+          <div class="fg">
+            <label class="flabel">Alert khi Hook Rate dưới (%)</label>
+            <input class="fc" id="wb-thr" type="number" value="30" placeholder="30">
+          </div>
+          <div class="fg">
+            <label class="flabel">Khi phát hiện 3 tín hiệu xanh</label>
+            <select class="fc" id="wb-scale">
+              <option value="off">Chỉ hiển thị trong app</option>
+              <option value="notify">Gửi alert qua webhook</option>
+              <option value="on">Tự động vít ngân sách ×5</option>
+            </select>
+          </div>
+          <button class="btn btn-y" onclick="saveWebhook()"><i class="fas fa-save"></i> Lưu Config</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><span style="color:var(--yellow)">🔔</span> System Alert Log</div>
+          <div id="alert-log" style="font-size:12px;color:var(--muted);max-height:220px;overflow-y:auto">
+            <div style="padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--win)">●</span> [00:00] AIOS khởi động thành công</div>
+            <div style="padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">●</span> [00:00] Waiting for first data input...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span style="color:var(--flop)">🚫</span> Blacklist & Negative Prompts</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Các từ khóa/angle đã fail — Agent sẽ tránh lặp lại khi generate</div>
+        <div id="bl-display" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:40px">
+          <span style="color:var(--muted);font-size:13px">Chưa có blacklist.</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input class="fc" id="bl-inp" placeholder="Thêm từ khóa / angle cần tránh..." style="flex:1" onkeydown="if(event.key==='Enter')addBL()">
+          <button class="btn btn-r" onclick="addBL()">+ Blacklist</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ===============================================
+// STATE
+// ===============================================
+const S = {
+  product:'', pains:[], angles:[], blacklist:[],
+  personas:['Dân văn phòng nữ 25–35, ngồi máy tính 8h/ngày','Tài xế Grab / shipper lái xe 8-10h/ngày','Chủ xe gia đình hay đi du lịch xa','Dân IT/Designer ngồi code cả ngày','Kế toán văn phòng hay ngồi cúi','Bà mẹ hay bế con, lưng vai mỏi'],
+  currentAngle:null, hooks:[], adsData:{hr:null,cpc:null},
+  wb:{url:'',thr:30,scale:'off'}
+};
+
+function save(){try{localStorage.setItem('aios',JSON.stringify(S));}catch(e){}}
+function load(){try{const d=localStorage.getItem('aios');if(d)Object.assign(S,JSON.parse(d));}catch(e){}}
+
+// ===============================================
+// CLOCK
+// ===============================================
+setInterval(()=>{
+  const n=new Date();
+  const el=document.getElementById('clk');
+  if(el) el.textContent=n.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// ===============================================
+// NAV
+// ===============================================
+const TABS={
+  overview:['Tổng Quan','Hệ thống giám sát tự động — Angle Win AIOS'],
+  b1:['B1 — Sensors','Hút data từ CSKH · Trends · Ads Reports → Vector DB'],
+  b2:['B2 — AI Factory','Ráp khung 6P + Scale 30 Hook Variations + QC Gate'],
+  b3:['B3 — Thực Chiến','KOC Production → Analytics → 3 Tín Hiệu → Win Detection'],
+  b4:['B4 — Kết Quả','Angle Win ×5 Budget | Flop → Khám Bệnh → Clone Matrix'],
+  auto:['Auto Loop','n8n/Make · Webhooks · Blacklist · Agent Retraining'],
+};
+
+function showTab(t){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=document.getElementById('tab-'+t);
+  if(p) p.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+t+"'")) n.classList.add('active');
+  });
+  const ti=TABS[t]||['AIOS',''];
+  document.getElementById('tb-title').textContent=ti[0];
+  document.getElementById('tb-sub').textContent=ti[1];
+  if(t==='b2'){fillDropdowns();}
+  if(t==='b3'){fillAngleDrop();}
+  if(t==='b4'){renderB4();}
+}
+
+// ===============================================
+// B1: SENSORS
+// ===============================================
+function analyzeReviews(){
+  const rev=document.getElementById('in-rev').value;
+  const prod=document.getElementById('in-prod').value;
+  if(!rev.trim()){log('⚠️ Nhập reviews trước!','y');return;}
+  S.product=prod;
+  const lines=rev.split('\n').map(l=>l.trim().replace(/^["'«»""]|["'«»""]$/g,'')).filter(l=>l.length>8&&l.length<120);
+  const added=[];
+  lines.forEach(l=>{if(!S.pains.includes(l)){S.pains.push(l);added.push(l);}});
+  // fallback seeds if few lines
+  const seeds=['Lưng đau mỏi sau khi ngồi lâu','Vai gáy cứng sau 8h làm việc','Lái xe xa về lưng mỏi kinh khủng','Ghế văn phòng không đỡ lưng đủ','Cổ đau vì nhìn màn hình cả ngày','Đứng dậy buổi sáng lưng đau','Sợ mua đồ rẻ nhanh hỏng'];
+  if(S.pains.length<4) seeds.forEach(s=>{if(!S.pains.includes(s)){S.pains.push(s);added.push(s);}});
+  renderPainBank(); updateStats(); save();
+  log(`✅ Trích xuất xong! ${added.length} pains mới → Pain Bank. Chuyển sang B2 để tạo angle.`,'g');
+  tick(`Đã phân tích ${lines.length} reviews cho "${prod||'sản phẩm'}" — ${added.length} pains mới`);
+}
+
+function saveAds(){
+  S.adsData.hr=document.getElementById('in-hr').value;
+  S.adsData.cpc=document.getElementById('in-cpc').value;
+  save(); log(`✅ Đã lưu: Hook Rate ${S.adsData.hr}% | CPC ${S.adsData.cpc}đ`,'g');
+}
+
+function addManualPain(){
+  const v=document.getElementById('man-pain').value.trim();
+  if(!v)return;
+  if(!S.pains.includes(v)){S.pains.push(v);renderPainBank();updateStats();save();}
+  document.getElementById('man-pain').value='';
+}
+
+function renderPainBank(){
+  const c=document.getElementById('pain-bank');
+  document.getElementById('pain-cnt').textContent=S.pains.length+' pains';
+  document.getElementById('bd-b1').textContent=S.pains.length;
+  document.getElementById('s-pains').textContent=S.pains.length;
+  if(!S.pains.length){c.innerHTML='<span style="color:var(--muted);font-size:13px">Chưa có pain. Nhập reviews và phân tích.</span>';return;}
+  c.innerHTML=S.pains.map((p,i)=>`<span class="tag tag-pain" title="${p}">${p.length>35?p.slice(0,34)+'…':p} <span onclick="rmPain(${i},event)" style="opacity:.7">×</span></span>`).join('');
+}
+function rmPain(i,e){e.stopPropagation();S.pains.splice(i,1);renderPainBank();save();}
+
+function addPersona(){
+  const v=document.getElementById('new-per').value.trim();
+  if(!v)return;
+  if(!S.personas.includes(v)){S.personas.push(v);renderPersonaBank();save();}
+  document.getElementById('new-per').value='';
+}
+function renderPersonaBank(){
+  const c=document.getElementById('per-bank');
+  c.innerHTML=S.personas.map(p=>`<span class="tag tag-per">${p}</span>`).join('');
+}
+
+// ===============================================
+// B2: AI FACTORY
+// ===============================================
+function fillDropdowns(){
+  const p1=document.getElementById('p1');
+  const p2=document.getElementById('p2');
+  if(!p1||!p2)return;
+  const v1=p1.value,v2=p2.value;
+  p1.innerHTML='<option value="">-- Chọn persona --</option>'+S.personas.map(p=>`<option>${p}</option>`).join('');
+  p2.innerHTML='<option value="">-- Chọn pain từ Pain Bank --</option>'+S.pains.map(p=>`<option>${p}</option>`).join('');
+  p1.value=v1; p2.value=v2;
+}
+
+function genAngle(){
+  const p1=document.getElementById('p1').value;
+  const p2=document.getElementById('p2').value;
+  const p3=document.getElementById('p3').value;
+  const p4=document.getElementById('p4').value;
+  const p5=document.getElementById('p5').value;
+  const p6=document.getElementById('p6').value;
+  if(!p1||!p2){document.getElementById('angle-out').innerHTML='<span style="color:var(--flop)">⚠️ Cần chọn ít nhất P1 Persona và P2 Pain!</span>';return;}
+
+  const perShort=p1.split(',')[0];
+  const painShort=p2.split(' ').slice(0,5).join(' ');
+  const hooks=[
+    `"Ai ${perShort.toLowerCase()} mà hay bị ${p2.toLowerCase().slice(0,30)} thì xem cái này"`,
+    `"${perShort} nào đang ${painShort.toLowerCase()} thì video này dành cho bạn"`,
+    `"POV: Bạn là ${perShort.toLowerCase()} và đang ${painShort.toLowerCase()}..."`,
+    `"Mình từng bị ${painShort.toLowerCase()} mỗi ngày — cho đến khi tìm ra thứ này"`,
+  ];
+  const hook=hooks[Math.floor(Math.random()*hooks.length)];
+
+  document.getElementById('angle-out').innerHTML=`
+    <div style="margin-bottom:14px">
+      <span style="font-size:11px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:.05em">🎬 HOOK MỞ ĐẦU (Câu Rao)</span>
+      <div style="margin-top:7px;padding:11px 14px;background:#1a1a2e;border-radius:8px;font-style:italic;border-left:3px solid var(--purple)">${hook}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--purple)"><span class="ptag">P1</span><strong>Persona</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p1}</div></div>
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--red)"><span class="ptag">P2</span><strong>Pain</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p2}</div></div>
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--cyan)"><span class="ptag">P3</span><strong>Moment</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p3||'— chưa điền'}</div></div>
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--green)"><span class="ptag">P4</span><strong>Promise</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p4||'— chưa điền'}</div></div>
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--yellow)"><span class="ptag">P5</span><strong>Proof</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p5||'— chưa chọn'}</div></div>
+      <div style="padding:10px;background:#0c0d16;border-radius:8px;border-left:3px solid var(--orange)"><span class="ptag">P6</span><strong>Pull-to-buy</strong><div style="color:var(--muted);font-size:11px;margin-top:3px">${p6||'— chưa điền'}</div></div>
+    </div>
+    <div style="background:#0a150a;border:1px solid #14532d;border-radius:8px;padding:12px;font-size:12px;color:var(--green)">
+      📋 <strong>Brief KOC:</strong> Mở đầu: ${hook}. Quay cảnh <em>"${p3||'khi đang dùng sản phẩm'}"</em>. Dẫn đến lúc ${p4||'sản phẩm giải quyết vấn đề'}. Chứng minh: <em>${p5||'demo thực tế'}</em>. CTA: <em>"${p6||'Xem ngay nếu bạn cũng gặp tình trạng này'}"</em>
+    </div>`;
+
+  // QC
+  const qcs=[
+    {t:'P1 Persona cụ thể (không chung chung)',ok:p1.length>15},
+    {t:'P2 Pain lấy từ reviews thực tế (không tự nghĩ)',ok:!!p2&&S.pains.includes(p2)},
+    {t:'P3 Moment cụ thể (Cameraman bấm máy được ngay)',ok:p3.length>8},
+    {t:'P5 Proof: tắt tiếng vẫn hiểu sản phẩm làm gì',ok:!!p5},
+    {t:'P6 CTA gắn Pain (không dùng "Mua ngay nhé")',ok:p6.length>5&&!p6.includes('Mua ngay nhé')},
+  ];
+  const sc=qcs.filter(q=>q.ok).length;
+  const bcolor=sc>=4?'#14532d':sc>=2?'#422006':'#450a0a';
+  const btext=sc>=4?'var(--win)':sc>=2?'var(--yellow)':'var(--flop)';
+  const blabel=sc>=4?'✓ PASS':sc>=2?'△ REVIEW':'✗ FAIL';
+  document.getElementById('qc-badge').innerHTML=`<span style="padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;background:${bcolor};color:${btext}">QC ${sc}/5 ${blabel}</span>`;
+  document.getElementById('qc-list').innerHTML=qcs.map(q=>`<div class="chk"><div class="chk-ico ${q.ok?'chk-pass':'chk-fail'}">${q.ok?'✓':'✗'}</div><span style="color:${q.ok?'var(--text)':'var(--muted)'}">${q.t}</span></div>`).join('');
+  document.getElementById('qc-wrap').style.display='block';
+
+  // Save angle
+  const id=Date.now();
+  const a={id,hook,p1,p2,p3,p4,p5,p6,product:S.product,qc:sc,hookRate:null,intentCmts:null,sales:null,status:'testing',ts:new Date().toISOString()};
+  S.currentAngle=a;
+  S.angles.unshift(a);
+  save(); updateStats(); renderAngleTables();
+  document.getElementById('bd-win').textContent=S.angles.filter(x=>x.status==='win').length;
+  log(`✅ Angle mới: QC ${sc}/5 ${blabel} — Chuyển sang B3 để test thực chiến!`,sc>=4?'g':'y');
+  tick(`Angle mới: ${hook.slice(0,45)}... | QC ${sc}/5`);
+}
+
+function autoFill(){
+  if(!S.pains.length){log('⚠️ Pain Bank trống! Nhập reviews ở B1 trước.','y');return;}
+  fillDropdowns();
+  const rp=S.pains[Math.floor(Math.random()*S.pains.length)];
+  const rper=S.personas[Math.floor(Math.random()*S.personas.length)];
+  document.getElementById('p1').value=rper;
+  document.getElementById('p2').value=rp;
+  document.getElementById('p3').value='Cuối ngày làm việc, đứng dậy khỏi ghế — '+rp.slice(0,30);
+  document.getElementById('p4').value='Giảm '+rp.slice(0,20)+'— dùng 30 phút thấy khác biệt ngay';
+  document.getElementById('p5').value='Demo thật (đổ nước, bóp, kéo giãn)';
+  document.getElementById('p6').value=`Ai ${rper.split(',')[0].toLowerCase()} mà hay bị ${rp.slice(0,15).toLowerCase()} thì bấm xem — đang có voucher launch`;
+}
+
+function clearForm(){
+  ['p1','p3','p4','p6'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['p2','p5'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
+  document.getElementById('angle-out').innerHTML='<span style="color:var(--muted)">Điền 6P và bấm Generate → Brief angle xuất hiện ở đây</span>';
+  document.getElementById('qc-wrap').style.display='none';
+  document.getElementById('hooks-out').innerHTML='<span style="color:var(--muted);font-size:13px">Generate angle trước.</span>';
+  document.getElementById('matrix-wrap').style.display='none';
+}
+
+function genHooks(){
+  if(!S.currentAngle){log('⚠️ Generate angle trước!','y');return;}
+  const a=S.currentAngle;
+  const ps=a.p1?a.p1.split(',')[0].split(' ').slice(0,4).join(' '):'bạn';
+  const pa=a.p2?a.p2.split(' ').slice(0,5).join(' '):'vấn đề này';
+  S.hooks=[
+    `"Ai ${ps.toLowerCase()} mà hay bị ${pa.toLowerCase()} thì xem cái này..."`,
+    `"${ps} nào đang ${pa.toLowerCase()} mà chưa biết cách fix — xem ngay"`,
+    `"Tôi từng bị ${pa.toLowerCase()} mỗi ngày cho đến khi..."`,
+    `"3 năm ${pa.toLowerCase()} — fix được trong 7 ngày nhờ thứ này"`,
+    `"POV: Bạn là ${ps.toLowerCase()} và đang ${pa.toLowerCase()}..."`,
+  ];
+  document.getElementById('hooks-out').innerHTML=S.hooks.map((h,i)=>`
+    <div class="hook-item">
+      <span class="hook-num">H${i+1}</span>
+      <span style="font-size:12px;flex:1">${h}</span>
+      <button onclick="cpHook(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;transition:.12s" onmouseover="this.style.background='#252535'" onmouseout="this.style.background='none'">Copy</button>
+    </div>`).join('');
+
+  // Matrix
+  document.getElementById('matrix-wrap').style.display='block';
+  const personas=S.personas.slice(0,4);
+  let html='<div style="display:grid;grid-template-columns:90px repeat(5,1fr);gap:4px;margin-bottom:6px;">';
+  html+='<div></div>';
+  for(let h=1;h<=5;h++) html+=`<div style="font-size:10px;color:var(--purple);text-align:center;font-weight:700">Hook ${h}</div>`;
+  html+='</div>';
+  personas.forEach((per,pi)=>{
+    html+=`<div style="display:grid;grid-template-columns:90px repeat(5,1fr);gap:4px;margin-bottom:4px;">`;
+    html+=`<div style="font-size:10px;color:var(--cyan);align-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${per}">${per.split(',')[0].slice(0,12)}</div>`;
+    for(let hi=0;hi<5;hi++) html+=`<div class="mx-cell" onclick="this.classList.toggle('gen')" title="${per} + ${S.hooks[hi]||'Hook '+(hi+1)}">V${pi*5+hi+1}</div>`;
+    html+='</div>';
+  });
+  html+=`<div style="margin-top:8px;font-size:11px;color:var(--muted)">✅ Bấm vào ô để đánh dấu video đã làm. 5 Hook × 4 Persona = <strong style="color:var(--green)">20 Videos</strong> từ 1 Angle Win.</div>`;
+  document.getElementById('matrix-grid').innerHTML=html;
+  log('✅ 5 hook variations sẵn sàng! Clone matrix 5×4 = 20 videos.','g');
+}
+
+function cpHook(i){
+  navigator.clipboard.writeText(S.hooks[i]||'').then(()=>log('📋 Đã copy Hook '+(i+1),'g')).catch(()=>{});
+}
+
+// ===============================================
+// B3: THỰC CHIẾN
+// ===============================================
+function fillAngleDrop(){
+  const sel=document.getElementById('an-sel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">-- Chọn angle --</option>'+S.angles.map(a=>`<option value="${a.id}">${a.hook.slice(0,55)}...</option>`).join('');
+}
+
+function submitAnalytics(){
+  const id=parseInt(document.getElementById('an-sel').value);
+  const hr=parseFloat(document.getElementById('an-hr').value);
+  const ic=parseInt(document.getElementById('an-ic').value)||0;
+  const sa=parseInt(document.getElementById('an-sa').value)||0;
+  if(!id){log('⚠️ Chọn angle cần kiểm định!','y');return;}
+  if(isNaN(hr)){log('⚠️ Nhập Hook Rate!','y');return;}
+
+  const a=S.angles.find(x=>x.id===id);
+  if(a){
+    a.hookRate=hr; a.intentCmts=ic; a.sales=sa;
+    const s1=hr>=40,s2=ic>=10,s3=sa>0;
+    const wc=[s1,s2,s3].filter(Boolean).length;
+    if(wc===3){a.status='win';log('🏆 ANGLE WIN! Cả 3 tín hiệu xanh — Vít ngân sách ×5 ngay!','g');tick(`🏆 WIN: Hook ${hr}% | ${ic} intent cmts | ${sa} đơn`);}
+    else if(wc===0||(hr<20&&sa===0)){a.status='flop';log('☠️ FLOP — Khám bệnh: đổi P3 Moment hoặc P5 Proof','r');}
+    else{a.status='partial';log(`⚡ ${wc}/3 tín hiệu — Optimize thêm: ${hr<40?'Hook Rate thấp. ':''} ${ic<10?'Intent comments ít. ':''}${sa===0?'Chưa có đơn.':''}`,'y');}
+    save();
+  }
+
+  // Update signal cards
+  document.getElementById('sv1').textContent=hr+'%';
+  document.getElementById('sv2').textContent=ic;
+  document.getElementById('sv3').textContent=sa;
+  const cls=['sig1','sig2','sig3'];
+  [[hr>=40],[ic>=10],[sa>0]].forEach(([ok],i)=>{document.getElementById(cls[i]).className='sig-card '+(ok?'gborder':'rborder');});
+
+  // Verdict
+  const wc=[hr>=40,ic>=10,sa>0].filter(Boolean).length;
+  const issues=[];
+  if(hr<40) issues.push(`Hook Rate ${hr}% < 40% → Đổi P3 Moment (câu mở đầu cụ thể hơn)`);
+  if(ic<10) issues.push(`Chỉ ${ic} intent cmts → Kiểm tra P4 Promise đủ mạnh chưa`);
+  if(sa===0) issues.push(`0 đơn → Xem lại P6 CTA và P5 Proof`);
+  const vv=document.getElementById('verdict');
+  if(wc===3){
+    vv.innerHTML=`<div class="al al-g"><i class="fas fa-trophy"></i><div><strong>🏆 ANGLE WIN! Cả 3 tín hiệu thỏa mãn.</strong><br>Action: Vít ngân sách ×5 ngay + Feed data về B1 để nhân bản Clone Matrix.</div></div>`;
+  }else{
+    vv.innerHTML=`<div class="al al-${wc>=2?'y':'r'}"><i class="fas fa-stethoscope"></i><div><strong>${wc}/3 tín hiệu đạt.</strong> Khám bệnh:<ul style="margin-top:6px;padding-left:16px;line-height:1.8">${issues.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;
+  }
+  vv.style.display='block';
+
+  updateStats(); renderAngleTables(); renderProdTable();
+  document.getElementById('bd-b3').textContent=S.angles.filter(x=>x.hookRate!==null).length;
+  document.getElementById('bd-win').textContent=S.angles.filter(x=>x.status==='win').length;
+
+  // Update overview signals
+  document.getElementById('ov-hr').textContent=hr+'%';
+  document.getElementById('ov-ic').textContent=ic+' cmts';
+  document.getElementById('ov-sa').textContent=sa+' đơn';
+  document.getElementById('pf-hr').style.width=Math.min(hr,100)+'%';
+  document.getElementById('pf-ic').style.width=Math.min(ic*8,100)+'%';
+  document.getElementById('pf-sa').style.width=Math.min(sa*15,100)+'%';
+}
+
+function renderProdTable(){
+  const tb=document.getElementById('prod-tbl');
+  const tested=S.angles.filter(a=>a.hookRate!==null);
+  if(!tested.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Chưa có dữ liệu analytics.</td></tr>';return;}
+  tb.innerHTML=tested.map((a,i)=>{
+    const sb=a.status==='win'?'<span class="bw">🏆 WIN</span>':a.status==='flop'?'<span class="bf">☠️ FLOP</span>':'<span class="bt">⚡ PARTIAL</span>';
+    const ac=a.status==='win'?`<button class="btn btn-g" style="padding:4px 10px;font-size:11px" onclick="scaleA(${a.id})">×5 Scale</button>`:`<button class="btn btn-gh" style="padding:4px 10px;font-size:11px" onclick="showTab('b4')">Khám Bệnh</button>`;
+    return `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.hook}">${a.hook.slice(0,40)}...</td>
+      <td><span style="color:${a.hookRate>=40?'var(--win)':'var(--flop)'};font-weight:600">${a.hookRate}%</span></td>
+      <td><span style="color:${a.intentCmts>=10?'var(--win)':'var(--flop)'}">${a.intentCmts}</span></td>
+      <td><span style="color:${a.sales>0?'var(--win)':'var(--flop)'}">${a.sales}</span></td>
+      <td>${sb}</td><td>${ac}</td></tr>`;
+  }).join('');
+}
+
+// ===============================================
+// B4: KẾT QUẢ
+// ===============================================
+function renderB4(){
+  renderAngleTables();
+  renderProdTable();
+  const wins=S.angles.filter(a=>a.status==='win');
+  const flops=S.angles.filter(a=>a.status==='flop');
+  document.getElementById('win-list').innerHTML=wins.length?wins.map(a=>`
+    <div style="padding:11px;background:#0a150a;border-radius:8px;border:1px solid #14532d;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--win);margin-bottom:3px">🏆 ${a.hook.slice(0,55)}...</div>
+      <div style="font-size:11px;color:var(--muted)">${a.p1} | Hook: ${a.hookRate}% | ${a.intentCmts} intent cmts | ${a.sales} đơn</div>
+      <button class="btn btn-g" style="margin-top:8px;padding:4px 12px;font-size:11px" onclick="showScale(${a.id})">📐 Clone Matrix ×20</button>
+    </div>`).join(''):'<span style="color:var(--muted);font-size:13px">Chưa có win. Test ở B3.</span>';
+
+  document.getElementById('flop-list').innerHTML=flops.length?flops.map(a=>`
+    <div style="padding:11px;background:#140505;border-radius:8px;border:1px solid #7f1d1d;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--flop);margin-bottom:3px">☠️ ${a.hook.slice(0,55)}...</div>
+      <div style="font-size:11px;color:var(--muted)">Hook: ${a.hookRate}% | ${a.intentCmts} cmts | ${a.sales} đơn</div>
+      <div style="font-size:11px;color:var(--yellow);margin-top:5px">
+        ${a.hookRate<40?'→ Fix P3 Moment ':''} ${a.intentCmts<10?'→ Fix P4 Promise ':''} ${a.sales===0?'→ Fix P6 CTA':''}
+      </div>
+    </div>`).join(''):'<span style="color:var(--muted);font-size:13px">Chưa có flop. Test ở B3.</span>';
+}
+
+function renderAngleTables(){
+  const rows=S.angles.slice(0,15).map(a=>{
+    const sb=a.status==='win'?'<span class="bw">🏆 WIN</span>':a.status==='flop'?'<span class="bf">☠️ FLOP</span>':'<span class="bt">⟳ TESTING</span>';
+    return `<tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.hook}">${a.hook.slice(0,48)}...</td>
+      <td style="font-size:11px;color:var(--muted)">${(a.p1||'').slice(0,22)}</td>
+      <td style="font-size:11px;color:var(--muted)">${(a.p2||'').slice(0,25)}</td>
+      <td>${a.hookRate!==null?`<span style="color:${a.hookRate>=40?'var(--win)':'var(--flop)'}">${a.hookRate}%</span>`:'—'}</td>
+      <td>${a.sales!==null?a.sales:'—'}</td><td>${sb}</td></tr>`;
+  }).join('');
+  const empty='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Chưa có angle.</td></tr>';
+  ['ov-tbl','all-tbl'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=rows||empty;});
+}
+
+function showScale(id){
+  const a=S.angles.find(x=>x.id===id);
+  if(!a)return;
+  const ss=document.getElementById('scale-sec');ss.style.display='block';
+  document.getElementById('scale-det').innerHTML=`
+    <div class="al al-g" style="margin-bottom:14px"><i class="fas fa-trophy"></i><div><strong>${a.hook.slice(0,60)}...</strong><br>Hook: ${a.hookRate}% | Intent: ${a.intentCmts} cmts | Sales: ${a.sales} đơn</div></div>
+    <div style="font-size:13px;margin-bottom:12px"><strong style="color:var(--green)">Clone Matrix:</strong> 5 Hook Variations × 4 Persona = <strong>20 Videos Mới</strong> từ 1 Angle Win</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">
+      ${Array.from({length:20},(_,i)=>`<div class="mx-cell" style="border-color:var(--green);background:#0a1a0f;color:var(--green)" onclick="this.classList.toggle('gen')">V${i+1}</div>`).join('')}
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">Tính nhanh: 5 Hook × 4 Persona = 20 Videos hoàn toàn khác biệt từ 1 Angle Win duy nhất</div>`;
+}
+
+function scaleA(id){showTab('b4');setTimeout(()=>showScale(id),100);}
+
+// ===============================================
+// AUTO LOOP
+// ===============================================
+function saveWebhook(){
+  S.wb.url=document.getElementById('wb-url').value;
+  S.wb.thr=document.getElementById('wb-thr').value;
+  S.wb.scale=document.getElementById('wb-scale').value;
+  save(); log(`✅ Webhook config saved | Scale mode: ${S.wb.scale}`,'g');
+}
+
+function addBL(){
+  const v=document.getElementById('bl-inp').value.trim();
+  if(!v)return;
+  if(!S.blacklist.includes(v)){S.blacklist.push(v);renderBL();save();document.getElementById('bd-bl').textContent=S.blacklist.length;log(`🚫 Blacklisted: "${v}"`,'y');}
+  document.getElementById('bl-inp').value='';
+}
+
+function renderBL(){
+  const c=document.getElementById('bl-display');
+  c.innerHTML=S.blacklist.length?S.blacklist.map((b,i)=>`<span onclick="rmBL(${i})" style="background:#1a0505;color:var(--flop);border:1px solid #7f1d1d;padding:3px 10px;border-radius:999px;font-size:11px;cursor:pointer;transition:.12s">🚫 ${b} ×</span>`).join(''):'<span style="color:var(--muted);font-size:13px">Chưa có blacklist.</span>';
+}
+function rmBL(i){S.blacklist.splice(i,1);renderBL();document.getElementById('bd-bl').textContent=S.blacklist.length;save();}
+
+// ===============================================
+// CHART
+// ===============================================
+let wChart=null;
+function renderChart(){
+  const ctx=document.getElementById('chartW');
+  if(!ctx)return;
+  const labels=['T2','T3','T4','T5','T6','T7','CN'];
+  const w=[0,0,0,0,0,0,0],f=[0,0,0,0,0,0,0],t=[0,0,0,0,0,0,0];
+  S.angles.filter(a=>a.hookRate!==null).forEach((a,i)=>{
+    const d=i%7;
+    if(a.status==='win') w[d]++;
+    else if(a.status==='flop') f[d]++;
+    else t[d]++;
+  });
+  if(wChart) wChart.destroy();
+  wChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Win',data:w,backgroundColor:'#22c55e',borderRadius:4},
+      {label:'Testing',data:t,backgroundColor:'#facc15',borderRadius:4},
+      {label:'Flop',data:f,backgroundColor:'#ef4444',borderRadius:4},
+    ]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{x:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#1a1a28'}},
+             y:{stacked:true,ticks:{color:'#64748b',stepSize:1},grid:{color:'#1a1a28'}}}}
+  });
+}
+
+// ===============================================
+// STATS & UI
+// ===============================================
+function updateStats(){
+  const tot=S.angles.length;
+  const wins=S.angles.filter(a=>a.status==='win').length;
+  const wr=tot>0?Math.round(wins/tot*100):0;
+  const tested=S.angles.filter(a=>a.hookRate!==null);
+  const avgHR=tested.length>0?Math.round(tested.reduce((s,a)=>s+a.hookRate,0)/tested.length):null;
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-win').textContent=wins;
+  document.getElementById('s-wr').textContent=`Win rate: ${wr}%`;
+  document.getElementById('s-hr').textContent=avgHR!==null?avgHR+'%':'—';
+  document.getElementById('s-pains').textContent=S.pains.length;
+  document.getElementById('bd-win').textContent=wins;
+  renderChart();
+}
+
+function log(msg,type='y'){
+  const el=document.getElementById('alert-log');
+  if(!el)return;
+  const t=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  const c={y:'var(--yellow)',g:'var(--win)',r:'var(--flop)'}[type]||'var(--yellow)';
+  const d=document.createElement('div');
+  d.style.cssText='padding:4px 0;border-bottom:1px solid var(--border);font-size:12px';
+  d.innerHTML=`<span style="color:var(--muted)">[${t}]</span> <span style="color:${c}">${msg}</span>`;
+  el.insertBefore(d,el.firstChild);
+}
+
+function tick(msg){
+  const el=document.getElementById('ticker-txt');
+  if(el) el.textContent=msg;
+}
+
+// ===============================================
+// INIT
+// ===============================================
+function init(){
+  load();
+  renderPainBank(); renderPersonaBank(); renderAngleTables(); renderBL(); updateStats();
+  document.getElementById('bd-bl').textContent=S.blacklist.length;
+  document.getElementById('bd-b1').textContent=S.pains.length;
+  document.getElementById('bd-b3').textContent=S.angles.filter(a=>a.hookRate!==null).length;
+  document.getElementById('bd-win').textContent=S.angles.filter(a=>a.status==='win').length;
+  if(S.wb.url) document.getElementById('wb-url').value=S.wb.url;
+  if(S.wb.thr) document.getElementById('wb-thr').value=S.wb.thr;
+  if(S.wb.scale) document.getElementById('wb-scale').value=S.wb.scale;
+  renderChart();
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

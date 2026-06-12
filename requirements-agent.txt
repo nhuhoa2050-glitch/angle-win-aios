@@ -1,0 +1,7 @@
+# ── AIOS Agent — stack đầy đủ để sinh angle thật (tắt MOCK mode) ──
+# Cài cùng requirements.txt:  pip install -r requirements.txt -r requirements-agent.txt
+crewai>=0.51
+chromadb>=0.5
+schedule>=1.2
+langchain-openai>=0.1
+langchain-anthropic>=0.1

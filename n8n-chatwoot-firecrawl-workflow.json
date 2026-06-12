@@ -1,0 +1,451 @@
+{
+  "name": "AIOS — Chatwoot Pain Extractor + Firecrawl Shopee Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatwoot-webhook",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "node_chatwoot_webhook",
+      "name": "Chatwoot — New Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "aios-chatwoot-pain"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond_event",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "message_created",
+              "operator": { "type": "string", "operation": "equals" }
+            },
+            {
+              "id": "cond_type",
+              "leftValue": "={{ $json.message_type }}",
+              "rightValue": "incoming",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node_filter_incoming",
+      "name": "Filter — Incoming Messages Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 512,
+          "messages": [
+            {
+              "role": "user",
+              "content": "=Phân tích tin nhắn khách hàng sau và trích xuất pain points (nếu có). Chỉ trả về JSON, không giải thích.\n\nTin nhắn: \"{{ $json.content }}\"\nChannel: {{ $json.inbox?.channel_type || 'unknown' }}\n\nOutput JSON:\n{\n  \"has_pain\": true/false,\n  \"pain_text\": \"mô tả pain ngắn gọn bằng tiếng Việt\",\n  \"pain_category\": \"skin|hair|weight|energy|stress|sleep|other\",\n  \"emotion\": \"frustrated|worried|curious|neutral\",\n  \"urgency\": 1-5,\n  \"keywords\": [\"keyword1\", \"keyword2\"]\n}\n\nNếu không có pain, trả về { \"has_pain\": false }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_extract_pain_ai",
+      "name": "Claude — Extract Pain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.content?.[0]?.text || '{\"has_pain\":false}';\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch(e) {\n  parsed = { has_pain: false };\n}\n\nconst original = $('Filter — Incoming Messages Only').first().json;\n\nreturn [{\n  json: {\n    ...parsed,\n    source: 'chatwoot',\n    channel: original.inbox?.channel_type || 'unknown',\n    conversation_id: original.conversation?.id,\n    contact_id: original.contact?.id,\n    raw_message: original.content,\n    collected_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node_parse_pain",
+      "name": "Parse Pain JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "cond_has_pain",
+              "leftValue": "={{ $json.has_pain }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node_filter_pain",
+      "name": "Filter — Has Pain Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CHROMA_URL }}/api/v1/collections/{{ $env.CHROMA_COLLECTION }}/add",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "ids": ["={{ 'chatwoot_' + $json.conversation_id + '_' + Date.now() }}"],
+          "documents": ["={{ $json.pain_text }}"],
+          "metadatas": [
+            {
+              "source": "chatwoot",
+              "channel": "={{ $json.channel }}",
+              "category": "={{ $json.pain_category }}",
+              "emotion": "={{ $json.emotion }}",
+              "urgency": "={{ $json.urgency }}",
+              "keywords": "={{ JSON.stringify($json.keywords) }}",
+              "collected_at": "={{ $json.collected_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_push_chroma",
+      "name": "ChromaDB — Add Pain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.AIOS_WEBHOOK_URL }}/pain-bank",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-AIOS-Key", "value": "={{ $env.AIOS_SECRET_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ source: 'chatwoot', pain: $json.pain_text, category: $json.pain_category, urgency: $json.urgency, keywords: $json.keywords, ts: $json.collected_at }) }}",
+        "options": {}
+      },
+      "id": "node_notify_aios_pain",
+      "name": "Notify AIOS — New Pain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 200]
+    },
+
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }]
+        }
+      },
+      "id": "node_cron_firecrawl",
+      "name": "Cron — 7am Daily Shopee Scrape",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "// List of Shopee product URLs to scrape reviews from\n// These are your main product + top 3 competitors\nconst urls = process.env.SHOPEE_SCRAPE_URLS\n  ? JSON.parse(process.env.SHOPEE_SCRAPE_URLS)\n  : [\n      'https://shopee.vn/product/your-product-id',\n      'https://shopee.vn/product/competitor-1-id',\n      'https://shopee.vn/product/competitor-2-id'\n    ];\n\nreturn urls.map((url, i) => ({ json: { url, index: i, type: i === 0 ? 'own' : 'competitor' } }));"
+      },
+      "id": "node_shopee_urls",
+      "name": "Set Shopee URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 520]
+    },
+    {
+      "parameters": {
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.FIRECRAWL_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "url": "={{ $json.url }}",
+          "formats": ["markdown"],
+          "actions": [
+            { "type": "wait", "milliseconds": 2000 },
+            { "type": "click", "selector": "[data-testid='review-tab'], .product-ratings" },
+            { "type": "wait", "milliseconds": 1500 }
+          ],
+          "includeTags": ["[data-testid*='rating']", "[data-testid*='review']", ".shopee-review"],
+          "excludeTags": ["nav", "header", "footer", "script"],
+          "onlyMainContent": true
+        },
+        "options": {}
+      },
+      "id": "node_firecrawl_scrape",
+      "name": "Firecrawl — Scrape Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 520]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 1024,
+          "messages": [
+            {
+              "role": "user",
+              "content": "=Phân tích reviews Shopee sau và trích xuất TOP 5 pain points khách hàng đề cập nhiều nhất. Trả về JSON array.\n\nNguồn: {{ $json.url }} ({{ $('Set Shopee URLs').item.json.type }})\nNội dung:\n{{ $json.data?.markdown?.substring(0, 3000) || 'No content' }}\n\nOutput JSON array:\n[\n  {\n    \"pain_text\": \"mô tả pain bằng tiếng Việt tự nhiên\",\n    \"frequency\": 1-10,\n    \"category\": \"skin|hair|weight|energy|stress|sleep|other\",\n    \"keywords\": [\"kw1\", \"kw2\"],\n    \"source_url\": \"{{ $json.url }}\",\n    \"product_type\": \"{{ $('Set Shopee URLs').item.json.type }}\"\n  }\n]\n\nChỉ trả về JSON array, không giải thích."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_extract_shopee_pains",
+      "name": "Claude — Extract Shopee Pains",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.content?.[0]?.text || '[]';\nlet pains;\ntry {\n  pains = JSON.parse(raw);\n} catch(e) {\n  pains = [];\n}\n\nreturn pains.map((p, i) => ({\n  json: {\n    ...p,\n    id: `shopee_${Date.now()}_${i}`,\n    source: 'firecrawl_shopee',\n    collected_at: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "node_parse_shopee_pains",
+      "name": "Parse Shopee Pains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 520]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CHROMA_URL }}/api/v1/collections/{{ $env.CHROMA_COLLECTION }}/add",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "ids": ["={{ $json.id }}"],
+          "documents": ["={{ $json.pain_text }}"],
+          "metadatas": [
+            {
+              "source": "firecrawl_shopee",
+              "product_type": "={{ $json.product_type }}",
+              "source_url": "={{ $json.source_url }}",
+              "category": "={{ $json.category }}",
+              "frequency": "={{ $json.frequency }}",
+              "keywords": "={{ JSON.stringify($json.keywords) }}",
+              "collected_at": "={{ $json.collected_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_push_shopee_chroma",
+      "name": "ChromaDB — Add Shopee Pain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate summary to send to AIOS after all items processed\nconst allPains = $input.all().map(i => i.json);\n\n// Group by category\nconst byCategory = {};\nallPains.forEach(p => {\n  const cat = p.category || 'other';\n  if (!byCategory[cat]) byCategory[cat] = 0;\n  byCategory[cat]++;\n});\n\nreturn [{\n  json: {\n    source: 'firecrawl_shopee',\n    total_pains: allPains.length,\n    by_category: byCategory,\n    top_pains: allPains.slice(0, 5).map(p => p.pain_text),\n    scraped_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node_aggregate",
+      "name": "Aggregate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 520]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.AIOS_WEBHOOK_URL }}/pain-bank/batch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-AIOS-Key", "value": "={{ $env.AIOS_SECRET_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node_notify_aios_shopee",
+      "name": "Notify AIOS — Shopee Batch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 520]
+    },
+    {
+      "parameters": {
+        "url": "https://openapi.zalo.me/v2.0/oa/message/cs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "={{ $env.ZALO_ACCESS_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "recipient": { "user_id": "={{ $env.ZALO_USER_ID }}" },
+          "message": {
+            "text": "=📊 [Pain Bank] Shopee scrape xong:\n• {{ $json.total_pains }} pain mới thêm vào Chroma\n• Top category: {{ Object.entries($json.by_category).sort((a,b) => b[1]-a[1])[0]?.[0] || 'N/A' }}\n🔍 Mở AIOS → B1 Sensors để xem"
+          }
+        },
+        "options": {}
+      },
+      "id": "node_zalo_shopee",
+      "name": "Zalo — Shopee Done",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 520]
+    }
+  ],
+  "connections": {
+    "Chatwoot — New Message": {
+      "main": [
+        [{ "node": "Filter — Incoming Messages Only", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter — Incoming Messages Only": {
+      "main": [
+        [{ "node": "Claude — Extract Pain", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Claude — Extract Pain": {
+      "main": [
+        [{ "node": "Parse Pain JSON", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Pain JSON": {
+      "main": [
+        [{ "node": "Filter — Has Pain Only", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter — Has Pain Only": {
+      "main": [
+        [{ "node": "ChromaDB — Add Pain", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "ChromaDB — Add Pain": {
+      "main": [
+        [{ "node": "Notify AIOS — New Pain", "type": "main", "index": 0 }]
+      ]
+    },
+    "Cron — 7am Daily Shopee Scrape": {
+      "main": [
+        [{ "node": "Set Shopee URLs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set Shopee URLs": {
+      "main": [
+        [{ "node": "Firecrawl — Scrape Reviews", "type": "main", "index": 0 }]
+      ]
+    },
+    "Firecrawl — Scrape Reviews": {
+      "main": [
+        [{ "node": "Claude — Extract Shopee Pains", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude — Extract Shopee Pains": {
+      "main": [
+        [{ "node": "Parse Shopee Pains", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Shopee Pains": {
+      "main": [
+        [{ "node": "ChromaDB — Add Shopee Pain", "type": "main", "index": 0 }]
+      ]
+    },
+    "ChromaDB — Add Shopee Pain": {
+      "main": [
+        [{ "node": "Aggregate Summary", "type": "main", "index": 0 }]
+      ]
+    },
+    "Aggregate Summary": {
+      "main": [
+        [
+          { "node": "Notify AIOS — Shopee Batch", "type": "main", "index": 0 },
+          { "node": "Zalo — Shopee Done", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "aios-pain-collectors",
+    "templateCredsSetupCompleted": true
+  },
+  "id": "aios-chatwoot-firecrawl-001",
+  "tags": ["aios", "chatwoot", "firecrawl", "pain-bank"],
+  "_comments": {
+    "env_vars_required": [
+      "ANTHROPIC_API_KEY — for Claude Haiku pain extraction",
+      "CHROMA_URL — ChromaDB base URL e.g. http://localhost:8000",
+      "CHROMA_COLLECTION — collection name e.g. 'pain_bank'",
+      "AIOS_WEBHOOK_URL — AIOS server base URL",
+      "AIOS_SECRET_KEY — shared secret",
+      "FIRECRAWL_API_KEY — from app.firecrawl.dev",
+      "SHOPEE_SCRAPE_URLS — JSON array of Shopee product URLs to scrape",
+      "ZALO_ACCESS_TOKEN — Zalo OA token",
+      "ZALO_USER_ID — notification recipient"
+    ],
+    "chatwoot_setup": "In Chatwoot Admin → Integrations → Webhooks → Add URL: http://your-n8n/webhook/chatwoot-webhook. Events: message_created",
+    "workflow_1": "Chatwoot → incoming message → Claude extract pain → filter has_pain=true → ChromaDB + AIOS",
+    "workflow_2": "Cron 7am → Shopee URLs → Firecrawl scrape → Claude extract top5 pains → ChromaDB → AIOS batch + Zalo"
+  }
+}

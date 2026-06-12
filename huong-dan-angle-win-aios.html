@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Hướng dẫn ⚡ Angle Win AIOS</title>
+<style>
+  @page { size: A4; margin: 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', 'Segoe UI', system-ui, Arial, sans-serif;
+         color: #1e293b; font-size: 12px; line-height: 1.55; margin: 0; }
+  h1 { font-size: 26px; margin: 0 0 2px; color: #0f172a; }
+  h2 { font-size: 16px; margin: 22px 0 8px; padding: 6px 10px; color: #fff;
+       background: linear-gradient(90deg,#0ea5e9,#6366f1); border-radius: 6px; }
+  h3 { font-size: 13px; margin: 14px 0 4px; color: #6366f1; }
+  p { margin: 4px 0; }
+  .sub { color: #64748b; font-size: 12px; margin-bottom: 4px; }
+  .hero { border: 2px solid #0ea5e9; border-radius: 10px; padding: 14px 16px;
+          background: #f0f9ff; margin-bottom: 6px; }
+  .hero .tag { display:inline-block; background:#6366f1; color:#fff; font-size:10px;
+          padding:2px 8px; border-radius:10px; margin-right:6px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 11px; }
+  th { background: #1e293b; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { border: 1px solid #e2e8f0; padding: 6px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .badge { display:inline-block; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:600; }
+  .b-green{background:#dcfce7;color:#15803d;} .b-red{background:#fee2e2;color:#b91c1c;}
+  .b-blue{background:#dbeafe;color:#1d4ed8;} .b-amber{background:#fef3c7;color:#b45309;}
+  .b-purple{background:#ede9fe;color:#6d28d9;}
+  .two { display: flex; gap: 12px; }
+  .two > div { flex: 1; }
+  .flow { counter-reset: step; margin: 6px 0; padding: 0; list-style: none; }
+  .flow li { position: relative; padding: 6px 6px 6px 30px; border-left: 2px solid #c7d2fe; margin-left:8px; }
+  .flow li:before { counter-increment: step; content: counter(step);
+       position:absolute; left:-12px; top:5px; width:22px; height:22px; border-radius:50%;
+       background:#6366f1; color:#fff; text-align:center; line-height:22px; font-size:11px; font-weight:700; }
+  .note { background:#fffbeb; border:1px solid #fcd34d; border-radius:6px; padding:8px 10px; font-size:11px; }
+  code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-size:10.5px; color:#0f172a; }
+  .footer { margin-top:18px; padding-top:8px; border-top:1px solid #e2e8f0; color:#94a3b8; font-size:10px; text-align:center; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>⚡ ANGLE WIN AIOS</h1>
+  <div class="sub">Hệ thống tự hành quản lý &amp; test "angle" quảng cáo TikTok Shop cho nhiều nhóm Marketing</div>
+  <div style="margin-top:6px;">
+    <span class="tag">Multi-tenant</span><span class="tag">Event-Driven</span><span class="tag">AI A/B Matrix</span>
+    <span class="tag">FastAPI + SQLite</span><span class="tag">n8n Automation</span>
+  </div>
+  <p style="margin-top:8px;font-size:11px;color:#475569;">Bản hướng dẫn cho người mới (newbie) — cập nhật 12/06/2026</p>
+</div>
+
+<h2>1. ANGLE WIN AIOS là gì? (giải thích cho newbie)</h2>
+<p><b>"Angle"</b> = <i>góc tiếp cận</i> của một video bán hàng: cùng 1 sản phẩm nhưng kể theo nhiều cách khác nhau để chạm đúng nỗi đau (pain) của khách. Mỗi angle là một "kịch bản hook" để KOC quay clip.</p>
+<p><b>AIOS</b> = <i>Angle Intelligence Operating System</i> — một "hệ điều hành" giúp đội marketing: thu thập nỗi đau khách hàng → để AI sinh angle → duyệt → đem test trên TikTok → đo Win/Flop → giữ cái thắng, bỏ cái thua. Tất cả tự động và <b>tách biệt dữ liệu theo từng nhóm</b> (mỗi team không thấy bài của team khác).</p>
+<div class="note">💡 <b>Hiểu nhanh:</b> Giống một "nhà máy ý tưởng quảng cáo": đầu vào là nỗi đau khách → máy AI nhào nặn ra angle → người duyệt → thị trường chấm điểm → máy học cái nào hiệu quả để làm tiếp.</div>
+
+<h2>2. Vai trò &amp; thành phần hệ thống</h2>
+<table>
+<tr><th style="width:22%">Thành phần (File)</th><th style="width:16%">Vai trò</th><th>Mô tả cho newbie</th></tr>
+<tr><td><b>aios_server.py</b><br><span class="badge b-blue">Hub / Bộ não</span></td><td>Trung tâm điều phối</td><td>Máy chủ FastAPI: nhận dữ liệu, lưu trữ, gọi AI, phục vụ giao diện. Mọi thứ đi qua đây.</td></tr>
+<tr><td><b>angle-win-aios-v2.html</b><br><span class="badge b-purple">Dashboard</span></td><td>Giao diện người dùng</td><td>Trang web 1 file chạy trên trình duyệt: nơi nhân viên xem, duyệt, test angle.</td></tr>
+<tr><td><b>crewai_angle_agent.py</b><br><span class="badge b-green">AI Engine</span></td><td>Sinh angle</td><td>Đội 4 "nhân viên AI" (CrewAI) viết angle theo công thức 6P. Có chế độ Mock chạy không cần API key.</td></tr>
+<tr><td><b>n8n-angle-win-workflow.json</b><br><span class="badge b-amber">Automation</span></td><td>Tự động hóa</td><td>3 luồng chạy theo lịch (cron): kéo số liệu, sinh angle 6h sáng, do thám đối thủ 8h sáng.</td></tr>
+<tr><td><b>SQLite (aios.db)</b><br><span class="badge b-blue">Kho dữ liệu</span></td><td>Lưu trữ</td><td>Cơ sở dữ liệu nhẹ 1 file. Mọi bảng có cột <code>workspace_id</code> để cô lập nhóm.</td></tr>
+</table>
+
+<h2>3. Công cụ hỗ trợ &amp; công nghệ</h2>
+<table>
+<tr><th style="width:24%">Công cụ</th><th>Dùng để làm gì</th></tr>
+<tr><td><b>FastAPI + Uvicorn</b></td><td>Khung web Python tạo API &amp; máy chủ (Hub).</td></tr>
+<tr><td><b>SQLite</b></td><td>Lưu queue, angles, verdict, competitor, workspaces, jobs, events.</td></tr>
+<tr><td><b>CrewAI + LLM</b> (OpenAI/Anthropic)</td><td>Sinh angle bằng nhiều "agent" AI phối hợp. Mock-mode nếu chưa có key.</td></tr>
+<tr><td><b>ChromaDB</b> (Pain Bank)</td><td>Kho "nỗi đau khách hàng" dạng vector, mỗi nhóm 1 collection riêng.</td></tr>
+<tr><td><b>n8n</b></td><td>Tự động hóa kéo/đẩy dữ liệu theo lịch, ghi Google Sheets.</td></tr>
+<tr><td><b>Unofficial TikTok API</b></td><td>Thu thập comment/video/đối thủ làm nguyên liệu cho Pain Bank.</td></tr>
+<tr><td><b>Apify</b></td><td>Scrape video trending của đối thủ (Competitor Spy).</td></tr>
+<tr><td><b>Zalo OA / Google Sheets</b></td><td>Thông báo Win/Flop &amp; lưu vết toàn bộ sự kiện.</td></tr>
+<tr><td><b>SSE (Server-Sent Events)</b></td><td>Hiển thị realtime trạng thái "AI đang suy nghĩ" ngay trên nút bấm.</td></tr>
+</table>
+
+<h2>4. Cách triển khai (deploy)</h2>
+<table>
+<tr><th style="width:8%">Bước</th><th style="width:30%">Lệnh / Hành động</th><th>Giải thích</th></tr>
+<tr><td>1</td><td><code>bash run.sh</code></td><td>Tự tạo môi trường ảo, cài thư viện lõi, chạy Hub. Demo chạy ngay ở <b>Mock-mode</b>.</td></tr>
+<tr><td>2</td><td>Mở <code>http://localhost:8800/</code></td><td>Vào Dashboard. Chọn Nhóm (Workspace) → bắt đầu dùng.</td></tr>
+<tr><td>3</td><td>(Tùy chọn) sửa <code>.env</code></td><td>Điền API key LLM, ChromaDB, Zalo, n8n, <code>N8N_MASTER_WEBHOOK</code>… để bật bản thật.</td></tr>
+<tr><td>4</td><td><code>pip install -r requirements-agent.txt</code></td><td>Cài CrewAI/Chroma để tắt Mock, sinh angle bằng LLM thật.</td></tr>
+<tr><td>5</td><td>Import <code>n8n-angle-win-workflow.json</code></td><td>Bật 3 luồng tự động. Đặt biến <code>WS_ID</code>, <code>AIOS_TOKEN</code> cho từng nhóm.</td></tr>
+<tr><td>6</td><td>Bảo mật: <code>AIOS_TOKEN</code>, <code>AIOS_STRICT_WS=1</code></td><td>Bật token webhook + chỉ chấp nhận nhóm đã đăng ký (chống dữ liệu rác).</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+<h2>5. Luồng hoạt động end-to-end</h2>
+<ul class="flow">
+<li><b>Chọn Nhóm:</b> nhân viên mở Dashboard, chọn Workspace → mọi request tự gắn header <code>X-Workspace-ID</code>.</li>
+<li><b>Thu thập Pain:</b> TikTok API/Apify gom comment, đối thủ → đẩy vào Pain Bank (ChromaDB) của nhóm.</li>
+<li><b>Sinh Angle (AI):</b> bấm <i>Generate</i> → Hub gọi CrewAI → trả về <b>3 biến thể (A/B Matrix)</b> cho mỗi pain.</li>
+<li><b>Duyệt (Approval Queue):</b> 3 thẻ variant gộp thành 1 cụm — chọn 1 hướng, 2 hướng còn lại tự loại.</li>
+<li><b>Thực chiến:</b> angle được duyệt → KOC quay clip → chạy quảng cáo TikTok.</li>
+<li><b>Đo lường:</b> n8n kéo số liệu mỗi 2h → tính Win/Flop (hook rate, comment, đơn).</li>
+<li><b>Realtime &amp; Quyết định:</b> Dashboard hiện biểu đồ Win-rate; Win → "vít budget x5", Flop → "tắt ngay".</li>
+<li><b>Lưu vết (Event Log):</b> mọi thao tác bắn về n8n → ghi Google Sheets (không làm chậm giao diện).</li>
+</ul>
+
+<h2>6. Các "Agent" / Skill AI đã dùng (CrewAI – công thức 6P)</h2>
+<table>
+<tr><th style="width:22%">Agent</th><th>Vai trò trong dây chuyền</th></tr>
+<tr><td><b>Pain Bank Analyst</b></td><td>Chọn Top 5 nỗi đau tiềm năng nhất (cảm xúc mạnh, liên quan sản phẩm, chưa bão hòa).</td></tr>
+<tr><td><b>6P Angle Generator</b></td><td>Viết angle theo 6P: Persona · Pain · Moment · Promise · Proof · Pull-to-buy.</td></tr>
+<tr><td><b>QC Judge</b></td><td>Chấm điểm 5 tiêu chí (Hook, Relatability, Credibility, CTA, Brand-safety), lọc bài đạt chuẩn.</td></tr>
+<tr><td><b>KOC Brief Writer</b></td><td>Biến angle đã đạt thành brief chuẩn để KOC đọc 2 phút là quay được.</td></tr>
+</table>
+<h3>Công thức 6P (mỗi angle gồm 6 mảnh ghép)</h3>
+<table>
+<tr><th style="width:16%">Mã</th><th style="width:20%">Tên</th><th>Ý nghĩa</th></tr>
+<tr><td><b>P1</b></td><td>Persona</td><td>Ai đang nói / khán giả mục tiêu (vd: Dân văn phòng 25-32).</td></tr>
+<tr><td><b>P2</b></td><td>Pain</td><td>Nỗi đau cụ thể đang nhắm tới.</td></tr>
+<tr><td><b>P3</b></td><td>Moment</td><td>Bối cảnh/thời điểm xảy ra nỗi đau.</td></tr>
+<tr><td><b>P4</b></td><td>Promise</td><td>Lời hứa lợi ích sản phẩm mang lại.</td></tr>
+<tr><td><b>P5</b></td><td>Proof</td><td>Bằng chứng (Before/After, Review, Demo…).</td></tr>
+<tr><td><b>P6</b></td><td>Pull-to-buy</td><td>CTA tự nhiên, không cảm giác ép mua.</td></tr>
+</table>
+<h3>A/B Matrix — 3 hướng tiếp cận mỗi pain</h3>
+<table>
+<tr><th style="width:20%">Hướng</th><th>Đặc trưng</th></tr>
+<tr><td><span class="badge b-blue">Logical</span></td><td>Lý trí: lý do, số liệu, so sánh — "3 lý do khiến…".</td></tr>
+<tr><td><span class="badge b-red">Emotional</span></td><td>Cảm xúc: kể chuyện thật, đồng cảm — "Tui từng bất lực vì…".</td></tr>
+<tr><td><span class="badge b-amber">Curiosity</span></td><td>Tò mò: giữ bí mật, reveal cuối — "Không ai nói cho bạn vì sao…".</td></tr>
+</table>
+
+<h2>7. Kết quả đầu ra (Output)</h2>
+<table>
+<tr><th style="width:26%">Đầu ra</th><th>Nội dung</th></tr>
+<tr><td><b>Angle Brief 6P</b></td><td>Hook + P1–P6 + QC score, sẵn sàng cho KOC quay.</td></tr>
+<tr><td><b>Approval Queue (cụm A/B)</b></td><td>3 variant/pain để chọn nhanh 1 hướng tốt nhất.</td></tr>
+<tr><td><b>Verdict Win/Flop</b></td><td>Phán quyết hiệu suất từng angle theo số liệu thật.</td></tr>
+<tr><td><b>Biểu đồ Realtime</b></td><td>Win-rate theo Giờ/Ngày/Tuần/Tháng + Export CSV.</td></tr>
+<tr><td><b>Competitor Intelligence</b></td><td>Bảng hook đối thủ (views, likes) để học theo.</td></tr>
+<tr><td><b>Master Event Log</b></td><td>Toàn bộ thao tác ghi Google Sheets (audit &amp; phân tích).</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+<h2>8. Ưu điểm &amp; Nhược điểm</h2>
+<div class="two">
+<div>
+<h3 style="color:#15803d;">✓ Ưu điểm</h3>
+<table>
+<tr><th>Điểm mạnh</th></tr>
+<tr><td>Chạy demo ngay không cần API key (Mock-mode).</td></tr>
+<tr><td>Cô lập dữ liệu đa nhóm tuyệt đối (workspace_id mọi tầng).</td></tr>
+<tr><td>Tự động hóa cao: cron, AI, đo lường, cảnh báo.</td></tr>
+<tr><td>A/B Matrix giúp test nhiều góc nhanh.</td></tr>
+<tr><td>Bảo mật: token webhook + allowlist nhóm.</td></tr>
+<tr><td>Chống mất mạng: outbox offline tự đồng bộ lại.</td></tr>
+<tr><td>Một file dashboard, dễ triển khai.</td></tr>
+</table>
+</div>
+<div>
+<h3 style="color:#b91c1c;">✗ Nhược điểm / Hạn chế</h3>
+<table>
+<tr><th>Điểm cần lưu ý</th></tr>
+<tr><td>SQLite phù hợp quy mô vừa, tải lớn cần Postgres.</td></tr>
+<tr><td>Phụ thuộc Unofficial TikTok API (dễ thay đổi/khóa).</td></tr>
+<tr><td>Chất lượng angle phụ thuộc Pain Bank &amp; LLM.</td></tr>
+<tr><td>Mock-mode chỉ để demo, chưa "thông minh" thật.</td></tr>
+<tr><td>Chưa có phân quyền người dùng chi tiết (RBAC).</td></tr>
+<tr><td>Cần n8n + hạ tầng để chạy bản tự động đầy đủ.</td></tr>
+</table>
+</div>
+</div>
+
+<h2>9. Cách cải tiến (Roadmap)</h2>
+<table>
+<tr><th style="width:14%">Mức</th><th style="width:30%">Hạng mục</th><th>Mục tiêu</th></tr>
+<tr><td><span class="badge b-green">Đã xong</span></td><td>P1 Bảo mật</td><td>Token webhook + allowlist nhóm + UI guard.</td></tr>
+<tr><td><span class="badge b-green">Đã xong</span></td><td>P2 AI-context theo nhóm</td><td>Mỗi nhóm product + Chroma collection riêng.</td></tr>
+<tr><td><span class="badge b-green">Đã xong</span></td><td>P3 Offline outbox</td><td>Lưu thao tác khi mất mạng, tự sync lại.</td></tr>
+<tr><td><span class="badge b-green">Đã xong</span></td><td>P4 Fair-share queue</td><td>Worker chia đều tài nguyên giữa các nhóm.</td></tr>
+<tr><td><span class="badge b-amber">Tương lai</span></td><td>RBAC &amp; SSO</td><td>Phân quyền Admin/Editor/Viewer, đăng nhập tập trung.</td></tr>
+<tr><td><span class="badge b-amber">Tương lai</span></td><td>Postgres + Redis</td><td>Mở rộng quy mô, cache, hàng đợi mạnh hơn.</td></tr>
+<tr><td><span class="badge b-amber">Tương lai</span></td><td>Auto-learning</td><td>AI học từ Win/Flop để tự tối ưu prompt sinh angle.</td></tr>
+<tr><td><span class="badge b-amber">Tương lai</span></td><td>Multi-platform</td><td>Mở rộng sang Shopee/Facebook Reels ngoài TikTok.</td></tr>
+</table>
+
+<h2>10. Thuật ngữ nhanh (cho newbie)</h2>
+<table>
+<tr><th style="width:24%">Thuật ngữ</th><th>Nghĩa</th></tr>
+<tr><td><b>Angle</b></td><td>Góc tiếp cận / kịch bản hook của một video bán hàng.</td></tr>
+<tr><td><b>Pain</b></td><td>Nỗi đau / vấn đề của khách hàng.</td></tr>
+<tr><td><b>Hook</b></td><td>3 giây đầu video giữ chân người xem.</td></tr>
+<tr><td><b>Win / Flop</b></td><td>Angle thắng (đáng vít budget) / thua (nên tắt).</td></tr>
+<tr><td><b>Workspace / Tenant</b></td><td>Một nhóm Marketing — dữ liệu cô lập riêng.</td></tr>
+<tr><td><b>QC Score</b></td><td>Điểm chất lượng angle do AI chấm (thang /10).</td></tr>
+<tr><td><b>KOC</b></td><td>Key Opinion Consumer — người quay clip review.</td></tr>
+<tr><td><b>Mock-mode</b></td><td>Chế độ chạy thử không cần LLM thật.</td></tr>
+</table>
+
+<div class="footer">⚡ Angle Win AIOS — Tài liệu hướng dẫn nội bộ · FastAPI + SQLite + CrewAI + n8n · 12/06/2026</div>
+
+</body>
+</html>

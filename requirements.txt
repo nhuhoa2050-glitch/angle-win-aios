@@ -1,0 +1,8 @@
+# ── AIOS HUB — core (đủ để chạy server + dashboard ở MOCK mode, demo ngay) ──
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-dotenv>=1.0
+requests>=2.31
+
+# ── Agent đầy đủ (sinh angle thật bằng LLM) — cài khi bật CrewAI ──
+# pip install -r requirements-agent.txt

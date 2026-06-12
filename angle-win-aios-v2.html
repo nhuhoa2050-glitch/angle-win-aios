@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ Angle Win AIOS v3.0</title>
+<title>⚡ Angle Win AIOS v2.0</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -131,7 +131,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="title">⚡ ANGLE WIN AIOS</div>
-    <div class="sub">AUTO v3.0 — TikTok Content OS</div>
+    <div class="sub">AUTO v2.0 — TikTok Content OS</div>
   </div>
   <div class="sidebar-section">Pipeline</div>
   <div class="nav-item active" onclick="showTab('overview')"><i class="fa fa-home fa-fw"></i> Tổng Quan</div>
@@ -145,12 +145,9 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   <div class="nav-item" onclick="showTab('sheets')"><i class="fa fa-table fa-fw"></i> Data Sheets <span class="nav-badge" id="badge-sheets">0</span></div>
   <div class="nav-item" onclick="showTab('nghiemthu')"><i class="fa fa-check-double fa-fw"></i> Nghiệm Thu <span class="nav-badge green" id="badge-nghiemthu">0</span></div>
   <div class="nav-item" onclick="showTab('kaizen')"><i class="fa fa-brain fa-fw"></i> Kaizen Memory</div>
-  <div class="nav-item" onclick="showTab('research')"><i class="fa fa-magnifying-glass-chart fa-fw"></i> Research <span class="nav-badge" id="badge-research">0</span></div>
-  <div class="nav-item" onclick="showTab('chat')"><i class="fa fa-comments fa-fw"></i> Analytics Chat</div>
   <div class="sidebar-section">System</div>
   <div class="nav-item" onclick="showTab('autoloop')"><i class="fa fa-rotate fa-fw"></i> Auto Loop</div>
   <div class="nav-item" onclick="showTab('blacklist')"><i class="fa fa-ban fa-fw"></i> Blacklist <span class="nav-badge red" id="badge-bl">0</span></div>
-  <div class="nav-item" onclick="showTab('eventlog')"><i class="fa fa-clock-rotate-left fa-fw"></i> Event Log <span class="nav-badge" id="badge-eventlog">0</span></div>
 </nav>
 <div id="main">
 <!-- ===== OVERVIEW ===== -->
@@ -501,167 +498,6 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   </div>
 </div>
 
-<!-- ===== RESEARCH TAB ===== -->
-<div id="tab-research" class="tab">
-  <div class="page-header">
-    <div class="page-title"><span>🔬 Research</span> — Khai thác Pain Bank</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="researchClearResults()"><i class="fa fa-trash"></i> Xoá kết quả</button>
-      <button class="btn btn-primary btn-sm" onclick="researchRun()"><i class="fa fa-play"></i> Chạy Research</button>
-    </div>
-  </div>
-  <div class="alert alert-info"><i class="fa fa-info-circle"></i> Nhập link Shopee / từ khoá → AI tự khai thác pain, trend, đối thủ → push vào Pain Bank.</div>
-
-  <div class="card-grid g2" style="margin-bottom:20px;">
-    <div class="card" style="grid-column:1/-1;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:13px;">🛍️ URL Manager — Shopee Scraper</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:11px;color:var(--muted);">⏰ Cron tự động: 7am hàng ngày</span>
-          <button class="btn btn-primary btn-sm" onclick="researchShopee()">
-            <i class="fa fa-play"></i> Chạy Scrape Ngay
-          </button>
-        </div>
-      </div>
-
-      <div class="card-grid g2" style="gap:12px;">
-        <!-- Own Products -->
-        <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div style="font-size:12px;font-weight:700;color:var(--cyan);">📦 Sản phẩm của mình</div>
-            <button class="btn btn-ghost btn-sm" onclick="urlMgrAdd('own')"><i class="fa fa-plus"></i> Thêm</button>
-          </div>
-          <div id="own-urls-list" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
-            <!-- Rows rendered by JS -->
-          </div>
-        </div>
-        <!-- Competitor Products -->
-        <div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div style="font-size:12px;font-weight:700;color:var(--red);">🎯 Đối thủ</div>
-            <button class="btn btn-ghost btn-sm" onclick="urlMgrAdd('competitor')"><i class="fa fa-plus"></i> Thêm</button>
-          </div>
-          <div id="competitor-urls-list" style="display:flex;flex-direction:column;gap:6px;min-height:40px;">
-            <!-- Rows rendered by JS -->
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-top:10px;font-size:11px;color:var(--muted);">
-        <i class="fa fa-info-circle"></i> URLs được lưu riêng theo workspace. Mỗi team quản lý danh sách của mình độc lập.
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-weight:700;margin-bottom:12px;font-size:13px;">🔍 Market Research (AI)</div>
-      <div class="form-group" style="margin-bottom:10px;">
-        <label>Tên sản phẩm / niche</label>
-        <input type="text" id="rs-product-query" placeholder="kem dưỡng da ban đêm cho da nhạy cảm">
-      </div>
-      <div class="form-group" style="margin-bottom:10px;">
-        <label>Góc nghiên cứu (chọn nhiều)</label>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;" id="rs-angle-chips">
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);margin:0;cursor:pointer;"><input type="checkbox" value="pain" checked> Pain points</label>
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);margin:0;cursor:pointer;"><input type="checkbox" value="competitor"> Đối thủ</label>
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);margin:0;cursor:pointer;"><input type="checkbox" value="trend"> Trend 2026</label>
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);margin:0;cursor:pointer;"><input type="checkbox" value="persona"> Persona</label>
-          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text);margin:0;cursor:pointer;"><input type="checkbox" value="objection"> Objection</label>
-        </div>
-      </div>
-      <div class="form-row g2">
-        <div class="form-group">
-          <label>AI Model</label>
-          <select id="rs-ai-model">
-            <option value="claude">Claude Haiku (nhanh)</option>
-            <option value="gpt4">GPT-4o (chi tiết)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Ngôn ngữ output</label>
-          <select id="rs-lang">
-            <option value="vi" selected>Tiếng Việt</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-purple btn-sm" onclick="researchAI()" style="width:100%;margin-top:4px;">
-        <i class="fa fa-brain"></i> AI Research + Phân tích
-      </button>
-    </div>
-  </div>
-
-  <!-- Results area -->
-  <div id="research-results-area" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-weight:700;font-size:14px;">📋 Kết quả Research</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-success btn-sm" onclick="researchPushAll()"><i class="fa fa-upload"></i> Push tất cả vào Pain Bank</button>
-        <button class="btn btn-ghost btn-sm" onclick="researchExportCSV()"><i class="fa fa-download"></i> Export CSV</button>
-      </div>
-    </div>
-    <div id="research-results-list" style="display:flex;flex-direction:column;gap:10px;"></div>
-  </div>
-
-  <!-- Research History -->
-  <div style="margin-top:24px;">
-    <div style="font-weight:700;font-size:14px;margin-bottom:12px;">📚 Lịch sử Research</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>Thời gian</th><th>Nguồn</th><th>Query</th><th>Pain tìm được</th><th>Đã push</th><th></th></tr></thead>
-        <tbody id="research-history-tbody">
-          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Chưa có lịch sử</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ===== ANALYTICS CHAT TAB ===== -->
-<div id="tab-chat" class="tab">
-  <div class="page-header">
-    <div class="page-title"><span>💬 Analytics Chat</span> — Hỏi dữ liệu bằng tiếng Việt</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="chatClear()"><i class="fa fa-trash"></i> Xoá chat</button>
-      <button class="btn btn-ghost btn-sm" onclick="chatExport()"><i class="fa fa-download"></i> Export</button>
-    </div>
-  </div>
-  <div class="alert alert-info"><i class="fa fa-robot"></i> Hỏi bất kỳ điều gì về dữ liệu angle, pain bank, KPI của workspace hiện tại bằng tiếng Việt thông thường.</div>
-
-  <!-- Quick Suggestions -->
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="chat-suggestions">
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Angle nào có hook rate cao nhất?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Pain category nào xuất hiện nhiều nhất?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Bao nhiêu angle đã được approve tuần này?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Persona nào convert tốt nhất?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Tổng số pain trong Pain Bank là bao nhiêu?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Angle nào đang trong trạng thái WIN?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">Tuần này bao nhiêu angle bị reject và lý do là gì?</button>
-    <button class="btn btn-ghost btn-sm" onclick="chatAsk(this.textContent)">So sánh hiệu quả P2 Pain của các angle approved</button>
-  </div>
-
-  <!-- Chat Window -->
-  <div id="chat-window" style="background:var(--card);border:1px solid var(--border);border-radius:10px;height:420px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;">
-    <div style="text-align:center;color:var(--muted);font-size:13px;margin:auto;">
-      <i class="fa fa-comments" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px;"></i>
-      Đặt câu hỏi về dữ liệu angle, pain bank, hoặc KPI của bạn
-    </div>
-  </div>
-
-  <!-- Input -->
-  <div style="display:flex;gap:8px;">
-    <input type="text" id="chat-input" placeholder="Hỏi bất kỳ điều gì về dữ liệu của bạn..." 
-           onkeydown="if(event.key==='Enter'&&!event.shiftKey){chatSend();event.preventDefault();}">
-    <button class="btn btn-primary" onclick="chatSend()" style="white-space:nowrap;">
-      <i class="fa fa-paper-plane"></i> Gửi
-    </button>
-  </div>
-
-  <!-- Data context panel -->
-  <div class="card" style="margin-top:16px;">
-    <div style="font-weight:700;font-size:13px;margin-bottom:10px;">📊 Context đang dùng</div>
-    <div id="chat-context-summary" class="card-grid g4"></div>
-  </div>
-</div>
-
 <!-- ===== KAIZEN MEMORY ===== -->
 <div id="tab-kaizen" class="tab">
   <div class="page-header">
@@ -770,91 +606,6 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   <div class="card">
     <div class="tbl-wrap"><table><thead><tr><th>Hook / Từ khóa</th><th>Lý do</th><th>Ngày thêm</th><th>Action</th></tr></thead>
     <tbody id="bl-tbody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Blacklist trống</td></tr></tbody></table></div>
-  </div>
-</div>
-
-
-<!-- ===== EVENT LOG TAB ===== -->
-<div id="tab-eventlog" class="tab">
-  <div class="page-header">
-    <div class="page-title"><span>📋 Event Log</span><span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:8px;">Append-only audit trail</span></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="evtExportCSV()"><i class="fa fa-file-csv"></i> CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="evtExportJSON()"><i class="fa fa-file-code"></i> JSON</button>
-      <button class="btn btn-danger btn-sm" onclick="clearEventsLog()"><i class="fa fa-trash"></i> Clear</button>
-    </div>
-  </div>
-
-  <!-- Stats bar -->
-  <div class="card-grid g4" style="margin-bottom:14px;">
-    <div class="metric-card" style="text-align:center;">
-      <div class="metric-value" id="evt-total" style="color:var(--cyan);">0</div>
-      <div class="metric-label">Tổng events</div>
-    </div>
-    <div class="metric-card" style="text-align:center;">
-      <div class="metric-value" id="evt-today" style="color:var(--green);">0</div>
-      <div class="metric-label">Hôm nay</div>
-    </div>
-    <div class="metric-card" style="text-align:center;">
-      <div class="metric-value" id="evt-top-type" style="font-size:12px;color:var(--yellow);">—</div>
-      <div class="metric-label">Top type</div>
-    </div>
-    <div class="metric-card" style="text-align:center;">
-      <div class="metric-value" id="evt-last-ts" style="font-size:11px;color:var(--muted);">—</div>
-      <div class="metric-label">Last event</div>
-    </div>
-  </div>
-
-  <!-- Chart row -->
-  <div class="card" style="margin-bottom:14px;padding:14px 18px;">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;">EVENTS / NGÀY (7 ngày gần nhất)</div>
-    <canvas id="evt-chart" height="60"></canvas>
-  </div>
-
-  <!-- Filters -->
-  <div class="card" style="margin-bottom:10px;padding:10px 14px;">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <select id="evt-filter-type" onchange="renderEventLog()" style="font-size:12px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;min-width:160px;">
-        <option value="">Tất cả types</option>
-        <option value="pain">pain.*</option>
-        <option value="angle">angle.*</option>
-        <option value="blacklist">blacklist.*</option>
-        <option value="kaizen">kaizen.*</option>
-        <option value="loop">loop.*</option>
-        <option value="workspace">workspace.*</option>
-        <option value="research">research.*</option>
-        <option value="chat">chat.*</option>
-      </select>
-      <select id="evt-filter-actor" onchange="renderEventLog()" style="font-size:12px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;">
-        <option value="">Tất cả actors</option>
-        <option value="user">user</option>
-        <option value="system">system</option>
-        <option value="n8n">n8n</option>
-      </select>
-      <input id="evt-filter-date" type="date" onchange="renderEventLog()" style="font-size:12px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;">
-      <input id="evt-filter-search" type="text" placeholder="Search payload…" oninput="renderEventLog()" style="font-size:12px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;min-width:180px;">
-      <button class="btn btn-ghost btn-sm" onclick="evtClearFilters()"><i class="fa fa-xmark"></i> Reset</button>
-      <span id="evt-count-label" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
-    </div>
-  </div>
-
-  <!-- Table -->
-  <div class="card">
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th style="min-width:140px;">Timestamp</th>
-          <th style="min-width:160px;">Type</th>
-          <th style="min-width:100px;">Workspace</th>
-          <th style="min-width:70px;">Actor</th>
-          <th>Payload</th>
-        </tr></thead>
-        <tbody id="evt-tbody">
-          <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px;">Chưa có sự kiện nào</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center;padding:10px;" id="evt-pagination"></div>
   </div>
 </div>
 
@@ -1043,8 +794,6 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
 .rt-bk.active{background:var(--cyan)!important;color:#000!important;}
 /* RBAC: Viewer chỉ xem — ẩn nút thao tác ghi */
 body.role-viewer .ac-actions, body.role-viewer #btn-generate { display:none!important; }
-/* Viewer = chỉ xem: ẩn mọi nút hành động (primary/success/danger) trong nội dung */
-body.role-viewer #main .btn-primary, body.role-viewer #main .btn-success, body.role-viewer #main .btn-danger { display:none!important; }
 body.role-viewer #queue-grid::before { content:"👁 Chế độ Chỉ xem (Viewer) — bạn không thể duyệt/sinh angle"; display:block; grid-column:1/-1; background:#1e293b; color:#facc15; padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:8px; }
 .pf-badge{background:#0ea5e9;color:#fff;}
 </style>
@@ -1062,68 +811,6 @@ const S = {
   loopRunning:false, loopLog:[],
   _rejectTargetId:null
 };
-
-
-// ===== EVENT BUS (Append-Only Event Log) =====
-const ES_TYPES = {
-  PAIN_ADDED:          'pain.added',
-  PAIN_DELETED:        'pain.deleted',
-  ANGLE_CREATED:       'angle.created',
-  ANGLE_APPROVED:      'angle.approved',
-  ANGLE_REJECTED:      'angle.rejected',
-  ANGLE_STATUS_CHANGE: 'angle.status_change',
-  BLACKLIST_ADDED:     'blacklist.added',
-  BLACKLIST_REMOVED:   'blacklist.removed',
-  KAIZEN_LOG:          'kaizen.log_added',
-  KAIZEN_PRACTICE:     'kaizen.practice_added',
-  KAIZEN_RETRO:        'kaizen.retro_added',
-  LOOP_STARTED:        'loop.started',
-  LOOP_STOPPED:        'loop.stopped',
-  WS_CREATED:          'workspace.created',
-  WS_SWITCHED:         'workspace.switched',
-  WS_DELETED:          'workspace.deleted',
-  RESEARCH_PUSHED:     'research.pains_pushed',
-  RESEARCH_TRIGGER:    'research.scrape_trigger',
-  CHAT_QUERY:          'chat.query',
-};
-
-function _esKey(){
-  const id=(typeof currentWS!=='undefined'&&currentWS)?currentWS.id:'global';
-  return 'aios_events_ws_'+id;
-}
-
-function emit(type, payload, actor){
-  try{
-    const key=_esKey();
-    let evs=[];
-    try{evs=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){}
-    evs.push({
-      id:'ev_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
-      ts:new Date().toISOString(),
-      type,
-      actor:actor||'user',
-      ws:(typeof currentWS!=='undefined'&&currentWS)?currentWS.id:'global',
-      wsName:(typeof currentWS!=='undefined'&&currentWS)?currentWS.name:'Global',
-      payload:payload||{}
-    });
-    if(evs.length>3000)evs=evs.slice(-3000);
-    localStorage.setItem(key,JSON.stringify(evs));
-    const b=document.getElementById('badge-eventlog');
-    if(b)b.textContent=evs.length;
-  }catch(e){console.warn('[emit]',e);}
-}
-
-function getEvents(wsId){
-  const key='aios_events_ws_'+(wsId||((typeof currentWS!=='undefined'&&currentWS)?currentWS.id:'global'));
-  try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return [];}
-}
-
-function clearEventsLog(){
-  if(!confirm('Xoá toàn bộ event log của workspace này?'))return;
-  localStorage.removeItem(_esKey());
-  const b=document.getElementById('badge-eventlog');if(b)b.textContent='0';
-  renderEventLog();
-}
 
 // ===== PERSIST =====
 function save(){
@@ -1171,9 +858,6 @@ function showTab(t){
   if(t==='autoloop')renderLoopLog();
   if(t==='blacklist')renderBlacklist();
   if(t==='realtime'){renderRealtime();rtStartPolling();}else{rtStopPolling();}
-  if(t==='research'){renderResearchHistory();urlMgrRender();}
-  if(t==='chat'){renderChatContext();}
-  if(t==='eventlog'){_evtPage=0;renderEventLog();}
   updateBadges();
 }
 
@@ -1205,7 +889,6 @@ function updateBadges(){
   setEl('badge-sheets',totalSheetRows||'0');
   setEl('badge-nghiemthu',validated||'0');
   setEl('badge-bl',S.blacklist.length||'0');
-  const _evtAll=getEvents();setEl('badge-eventlog',_evtAll.length||'0');
   setEl('cnt-cskh',S.sheets.cskh.length);
   setEl('cnt-affops',S.sheets.affops.length);
   setEl('cnt-competitor',S.sheets.competitor.length);
@@ -1301,12 +984,10 @@ function openAddPainModal(){openModal('modal-addpain');}
 function savePain(){
   const text=document.getElementById('pain-text-input')?.value?.trim();
   if(!text)return alert('Nhập pain text');
-  const _newPain={id:uid(),text,persona:document.getElementById('pain-persona-input')?.value,
+  S.pains.push({id:uid(),text,persona:document.getElementById('pain-persona-input')?.value,
     priority:document.getElementById('pain-priority-input')?.value,
     source:document.getElementById('pain-source-input')?.value,
-    date:today(),usedCount:0};
-  S.pains.push(_newPain);
-  emit('pain.added',{text:_newPain.text,source:_newPain.source,persona:_newPain.persona,priority:_newPain.priority});
+    date:today(),usedCount:0});
   save();closeModal('modal-addpain');renderPainBank();updateBadges();
   document.getElementById('pain-text-input').value='';
 }
@@ -1425,7 +1106,6 @@ function saveAngle(){
   const qc=calcQC({hook,p1,p2,p4,p5,p6});
   const angle={id:uid(),hook,p1,p2,p3,p4,p5,p6,qcScore:qc.score,status:'draft',result:null,hookRate:null,comments:null,sales:null,date:today()};
   S.angles.push(angle);
-  emit('angle.created',{id:angle.id,hook:angle.hook,qcScore:angle.qcScore,p1:angle.p1,p2:angle.p2});
   save();renderB2Table();updateBadges();renderOverview();
   document.getElementById('b2-hook').value='';
   document.getElementById('b2-p2').value='';
@@ -1618,10 +1298,9 @@ function generateQueue(){
     newQueue.push({id:uid(),hook,p1:persona,p2:pain.text.slice(0,60),
       p3:['Cuối ngày','Buổi sáng sớm','Sau bữa ăn','Khi đi làm'][i%4],
       p4:['nhanh chóng','hiệu quả ngay','trong 5 phút','tức thì'][i%4],
-      p5:proofs[i%proofs.length],p6:PLATFORM_CTA[currentPlatform]||'Link trong bio',
-      platform:currentPlatform,
+      p5:proofs[i%proofs.length],p6:'Link trong bio',
       qc,status:'pending',reason:'',ts:now(),painSource:pain.text.slice(0,80),
-      sourceTag:'từ '+pain.source+' · '+currentPlatform});
+      sourceTag:'từ '+pain.source});
   }
   S.approvalQueue=[...S.approvalQueue,...newQueue];
   save();renderQueue();updateBadges();
@@ -1713,7 +1392,6 @@ function approveAngle(id){
   const angle={id:uid(),hook:q.hook,p1:q.p1,p2:q.p2,p3:q.p3,p4:q.p4,p5:q.p5,p6:q.p6,
     qcScore:q.qc,status:'draft',result:null,hookRate:null,comments:null,sales:null,date:today(),fromQueue:true};
   S.angles.push(angle);
-  emit('angle.approved',{id:angle.id,hook:angle.hook,qcScore:angle.qcScore,fromQueue:true});
   save();renderQueue();updateBadges();renderOverview();
   const el=document.getElementById('ac-'+id);
   if(el){el.classList.add('approved');el.innerHTML='<div style="text-align:center;padding:20px;color:var(--green);"><i class="fa fa-check-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i>Approved — đã chuyển vào AI Factory</div>';}
@@ -1730,7 +1408,6 @@ function confirmReject(){
   const reason=document.getElementById('reject-reason-select')?.value||'';
   const note=document.getElementById('reject-note')?.value||'';
   q.status='rejected';q.reason=reason+(note?' — '+note:'');
-  emit('angle.rejected',{id:q.id,hook:q.hook,reason:q.reason});
   addToBlacklist(q.hook,q.reason);
   save();closeModal('modal-reject');renderQueue();updateBadges();
   S._rejectTargetId=null;
@@ -2061,9 +1738,7 @@ function getWeekNum(d){
 function openLogModal(){openModal('modal-log');}
 function saveLogEntry(){
   const text=document.getElementById('log-text')?.value?.trim();if(!text)return alert('Nhập nội dung');
-  const _logCat=document.getElementById('log-cat')?.value;const _logImpact=document.getElementById('log-impact')?.value;
-  S.kaizen.log.push({id:uid(),date:today(),category:_logCat,text,impact:_logImpact});
-  emit('kaizen.log_added',{category:_logCat,impact:_logImpact,text:text.slice(0,80)});
+  S.kaizen.log.push({id:uid(),date:today(),category:document.getElementById('log-cat')?.value,text,impact:document.getElementById('log-impact')?.value});
   save();closeModal('modal-log');renderKaizenLog();document.getElementById('log-text').value='';
 }
 
@@ -2091,10 +1766,8 @@ function deleteLogEntry(id){S.kaizen.log=S.kaizen.log.filter(e=>e.id!==id);save(
 function openPracticeModal(){openModal('modal-practice');}
 function savePractice(){
   const title=document.getElementById('practice-title')?.value?.trim();if(!title)return alert('Nhập tiêu đề');
-  const _pracStatus=document.getElementById('practice-status')?.value;const _pracSource=document.getElementById('practice-source')?.value;
   S.kaizen.practices.push({id:uid(),title,desc:document.getElementById('practice-desc')?.value||'',
-    source:_pracSource,status:_pracStatus});
-  emit('kaizen.practice_added',{title,status:_pracStatus,source:_pracSource});
+    source:document.getElementById('practice-source')?.value,status:document.getElementById('practice-status')?.value});
   save();closeModal('modal-practice');renderPractices();
 }
 
@@ -2127,11 +1800,9 @@ function startRetro(){
 
 function saveRetro(){
   const week=document.getElementById('retro-week')?.value;if(!week)return;
-  const _rWorked=document.getElementById('retro-worked')?.value||'';
-  S.kaizen.retros.push({id:uid(),week,worked:_rWorked,
+  S.kaizen.retros.push({id:uid(),week,worked:document.getElementById('retro-worked')?.value||'',
     failed:document.getElementById('retro-failed')?.value||'',learning:document.getElementById('retro-learning')?.value||'',
     focus:document.getElementById('retro-focus')?.value||''});
-  emit('kaizen.retro_added',{week,worked:_rWorked.slice(0,60)});
   save();closeModal('modal-retro');renderRetros();
 }
 
@@ -2159,7 +1830,6 @@ function addToBlacklist(text,reason){
   text=String(text||'').trim();if(!text)return;
   if(S.blacklist.find(b=>b.text===text))return;
   S.blacklist.push({id:uid(),text,reason:reason||'',date:today()});
-  emit('blacklist.added',{text,reason:reason||''});
   save();renderBlacklist();updateBadges();
 }
 
@@ -2187,190 +1857,6 @@ function removeFromBlacklist(id){
   S.blacklist=S.blacklist.filter(b=>b.id!==id);save();renderBlacklist();updateBadges();
 }
 
-
-// ===== EVENT LOG =====
-let _evtPage = 0;
-const EVT_PAGE_SIZE = 50;
-
-const EVT_TYPE_COLOR = {
-  'pain':      'var(--cyan)',
-  'angle':     'var(--green)',
-  'blacklist': 'var(--red)',
-  'kaizen':    'var(--yellow)',
-  'loop':      '#a78bfa',
-  'workspace': '#f0abfc',
-  'research':  '#67e8f9',
-  'chat':      '#86efac',
-};
-
-function evtTypeColor(type){
-  const prefix = type.split('.')[0];
-  return EVT_TYPE_COLOR[prefix] || 'var(--muted)';
-}
-
-function evtPayloadSummary(payload){
-  if(!payload) return '—';
-  const p = payload;
-  const parts = [];
-  if(p.text) parts.push(String(p.text).slice(0,60));
-  if(p.hook) parts.push('hook: '+String(p.hook).slice(0,50));
-  if(p.name) parts.push('name: '+p.name);
-  if(p.count !== undefined) parts.push('count: '+p.count);
-  if(p.wsId) parts.push('ws: '+p.wsId);
-  if(p.reason) parts.push('reason: '+String(p.reason).slice(0,40));
-  if(p.qcScore !== undefined) parts.push('qc: '+p.qcScore);
-  if(p.title) parts.push(String(p.title).slice(0,50));
-  if(p.category) parts.push('cat: '+p.category);
-  if(p.question) parts.push(String(p.question).slice(0,50));
-  if(!parts.length) return JSON.stringify(p).slice(0,80);
-  return parts.join(' · ');
-}
-
-function evtGetFiltered(){
-  const evs = getEvents();
-  const typeF = document.getElementById('evt-filter-type')?.value||'';
-  const actorF = document.getElementById('evt-filter-actor')?.value||'';
-  const dateF = document.getElementById('evt-filter-date')?.value||'';
-  const searchF = (document.getElementById('evt-filter-search')?.value||'').toLowerCase();
-
-  return evs.slice().reverse().filter(ev=>{
-    if(typeF && !ev.type.startsWith(typeF)) return false;
-    if(actorF && ev.actor !== actorF) return false;
-    if(dateF && !ev.ts.startsWith(dateF)) return false;
-    if(searchF){
-      const hay = (ev.type+' '+JSON.stringify(ev.payload)+' '+(ev.wsName||'')).toLowerCase();
-      if(!hay.includes(searchF)) return false;
-    }
-    return true;
-  });
-}
-
-let _evtChart = null;
-
-function renderEventLog(){
-  const all = getEvents();
-  const today = new Date().toISOString().slice(0,10);
-  const todayCount = all.filter(e=>e.ts.startsWith(today)).length;
-
-  // Stats
-  setEl('evt-total', all.length);
-  setEl('evt-today', todayCount);
-
-  // Top type
-  const typeCount = {};
-  all.forEach(e=>{ typeCount[e.type]=(typeCount[e.type]||0)+1; });
-  const topType = Object.entries(typeCount).sort((a,b)=>b[1]-a[1])[0];
-  setEl('evt-top-type', topType ? topType[0]+'('+topType[1]+')' : '—');
-
-  // Last event
-  const last = all[all.length-1];
-  if(last){
-    const d = new Date(last.ts);
-    setEl('evt-last-ts', d.toLocaleString('vi-VN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
-  }
-
-  // Chart — last 7 days
-  const labels = [];
-  const data = [];
-  for(let i=6;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const ds = d.toISOString().slice(0,10);
-    labels.push(ds.slice(5));
-    data.push(all.filter(e=>e.ts.startsWith(ds)).length);
-  }
-  const ctx = document.getElementById('evt-chart');
-  if(ctx){
-    if(_evtChart){ _evtChart.destroy(); _evtChart = null; }
-    _evtChart = new Chart(ctx, {
-      type:'bar',
-      data:{ labels, datasets:[{
-        data, backgroundColor:'rgba(56,189,248,.35)', borderColor:'var(--cyan)', borderWidth:1,
-        borderRadius:3, label:'events'
-      }]},
-      options:{
-        responsive:true, maintainAspectRatio:true,
-        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>' '+c.raw+' events'}} },
-        scales:{
-          y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#888',font:{size:10},maxTicksLimit:4},beginAtZero:true},
-          x:{grid:{display:false},ticks:{color:'#888',font:{size:10}}}
-        }
-      }
-    });
-  }
-
-  // Filtered list
-  const filtered = evtGetFiltered();
-  const total = filtered.length;
-  const pages = Math.max(1, Math.ceil(total/EVT_PAGE_SIZE));
-  if(_evtPage >= pages) _evtPage = pages-1;
-  const slice = filtered.slice(_evtPage*EVT_PAGE_SIZE, (_evtPage+1)*EVT_PAGE_SIZE);
-
-  setEl('evt-count-label', `${total} events`);
-
-  const tbody = document.getElementById('evt-tbody');
-  if(!tbody) return;
-  if(!slice.length){
-    tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px;">Không có event nào</td></tr>';
-  } else {
-    tbody.innerHTML = slice.map(ev=>{
-      const d = new Date(ev.ts);
-      const tsStr = d.toLocaleString('vi-VN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      const color = evtTypeColor(ev.type);
-      const summary = esc(evtPayloadSummary(ev.payload));
-      return `<tr>
-        <td style="font-size:11px;color:var(--muted);white-space:nowrap;">${tsStr}</td>
-        <td><span style="background:${color}22;color:${color};border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;">${ev.type}</span></td>
-        <td style="font-size:11px;">${esc(ev.wsName||ev.ws||'—')}</td>
-        <td><span class="badge badge-muted" style="font-size:10px;">${esc(ev.actor||'user')}</span></td>
-        <td style="font-size:11px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(JSON.stringify(ev.payload))}">${summary}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // Pagination
-  const pag = document.getElementById('evt-pagination');
-  if(pag){
-    if(pages<=1){ pag.innerHTML=''; return; }
-    let btns='';
-    for(let i=0;i<pages;i++){
-      btns+=`<button class="btn btn-sm ${i===_evtPage?'btn-primary':'btn-ghost'}" onclick="_evtPage=${i};renderEventLog()">${i+1}</button>`;
-    }
-    pag.innerHTML=btns;
-  }
-
-  // badge
-  const badge = document.getElementById('badge-eventlog');
-  if(badge) badge.textContent = all.length;
-}
-
-function evtClearFilters(){
-  const fields=['evt-filter-type','evt-filter-actor','evt-filter-date','evt-filter-search'];
-  fields.forEach(id=>{ const el=document.getElementById(id);if(el)el.value=''; });
-  _evtPage=0;
-  renderEventLog();
-}
-
-function evtExportCSV(){
-  const evs = evtGetFiltered();
-  if(!evs.length) return alert('Không có event nào');
-  const rows = [['id','ts','type','actor','ws','wsName','payload']];
-  evs.forEach(e=>rows.push([e.id,e.ts,e.type,e.actor||'user',e.ws||'',e.wsName||'',JSON.stringify(e.payload||{})]));
-  const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='aios-events-'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
-
-function evtExportJSON(){
-  const evs = evtGetFiltered();
-  if(!evs.length) return alert('Không có event nào');
-  const a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(evs,null,2));
-  a.download='aios-events-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-}
-
 // ===== AUTO LOOP =====
 function saveLoopConfig(){
   S.product=document.getElementById('al-product')?.value||'';
@@ -2389,9 +1875,6 @@ function toggleLoop(){
   if(S.loopRunning){
     addLoopLog('Auto Loop bật','Loop sẽ chạy mỗi 6AM');
     setEl('loop-last',new Date().toLocaleTimeString('vi-VN'));
-    emit('loop.started',{});
-  } else {
-    emit('loop.stopped',{});
   }
   save();
 }
@@ -2518,7 +2001,7 @@ function getDefaultState(){
   return{product:'',pains:[],angles:[],blacklist:[],personas:[],currentAngle:null,hooks:[],adsData:{hr:null,cpc:null},
     wb:{url:'',thr:30,scale:'off'},approvalQueue:[],
     sheets:{cskh:[],affops:[],competitor:[],trends:[]},nghiemThu:[],
-    kaizen:{log:[],practices:[],retros:[]},loopRunning:false,loopLog:[],_rejectTargetId:null,researchHistory:[],chatHistory:[],researchConfig:{ownUrls:[],competitorUrls:[]}};
+    kaizen:{log:[],practices:[],retros:[]},loopRunning:false,loopLog:[],_rejectTargetId:null};
 }
 
 function getWSData(wsId){
@@ -2538,7 +2021,6 @@ function switchWorkspace(ws){
   renderWorkspaceBar();
   hideAdminView();
   initApp();
-  emit('workspace.switched',{wsId:ws.id,wsName:ws.name});
 }
 
 function createWorkspaceFromForm(){
@@ -2551,7 +2033,6 @@ function createWorkspaceFromForm(){
   const list=getWorkspaces();
   list.push(ws);
   saveWorkspaces(list);
-  emit('workspace.created',{wsId:ws.id,name:ws.name,product:ws.product});
   switchWorkspace(ws);
 }
 
@@ -2895,32 +2376,11 @@ function requireAdmin(){
   return true;
 }
 // Đổi vai trò / nền tảng (lưu localStorage, cập nhật UI)
-// CTA theo nền tảng — dùng cho sinh angle offline
-const PLATFORM_CTA = {
-  TikTok:  'Giỏ hàng đang có mã, link mình để dưới nha',
-  Shopee:  'Bấm giỏ hàng Shopee, nhớ bấm mã giảm trước khi thanh toán',
-  Facebook:'Inbox shop hoặc bấm "Mua ngay" dưới bài để được tư vấn',
-};
-// Toast phản hồi nhanh (góc dưới giữa)
-function aiosToast(msg, color){
-  let t=document.getElementById('aios-toast');
-  if(!t){ t=document.createElement('div'); t.id='aios-toast';
-    t.style.cssText='position:fixed;bottom:54px;left:50%;transform:translateX(-50%);z-index:10000;'
-      +'padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;'
-      +'box-shadow:0 4px 16px rgba(0,0,0,.4);transition:opacity .3s;opacity:0;';
-    document.body.appendChild(t); }
-  t.style.background=color||'#0ea5e9'; t.textContent=msg; t.style.opacity='1';
-  clearTimeout(t._h); t._h=setTimeout(()=>{ t.style.opacity='0'; }, 2200);
-}
 function setRole(r){ currentRole = r; localStorage.setItem('aios_role', r);
   document.body.classList.toggle('role-viewer', r==='viewer');
-  if(typeof showTab==='function' && typeof currentTab!=='undefined') showTab(currentTab); // vẽ lại tab hiện tại để áp gating
-  else if(typeof renderQueue==='function') renderQueue();
-  aiosRoleBar();
-  const map={viewer:'👁 Chỉ xem — ẩn nút duyệt/sinh',editor:'✏️ Biên tập — duyệt & sinh angle',admin:'🛡️ Admin — toàn quyền + clone chéo team'};
-  aiosToast('Vai trò: '+map[r], r==='viewer'?'#64748b':r==='admin'?'#a855f7':'#0ea5e9'); }
-function setPlatform(p){ currentPlatform = p; localStorage.setItem('aios_platform', p); aiosRoleBar();
-  aiosToast('Nền tảng: '+p+' — angle MỚI sẽ dùng CTA của '+p, '#6366f1'); }
+  if(typeof renderQueue==='function') renderQueue();
+  aiosRoleBar(); }
+function setPlatform(p){ currentPlatform = p; localStorage.setItem('aios_platform', p); aiosRoleBar(); }
 
 // Thanh điều khiển RBAC + Platform (cố định góc trên phải)
 function aiosRoleBar(){
@@ -3397,621 +2857,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   // If workspaces exist, show modal to choose; if none, show modal to create
   showWSModal();
 });
-
-// ============================================================
-// ===== RESEARCH TAB FUNCTIONS =====
-// ============================================================
-
-function researchRun(){
-  // Shopee giờ dùng URL Manager (không còn textarea #rs-shopee-urls)
-  const urls = (typeof urlMgrGetAllUrls === 'function') ? urlMgrGetAllUrls() : [];
-  if(urls && urls.length) researchShopee();
-  else researchAI();
-}
-
-// (researchShopee bản cũ đã bỏ — dùng bản URL-Manager ở cuối file)
-
-function researchAI(){
-  const query = document.getElementById('rs-product-query').value.trim();
-  if(!query){alert('Vui lòng nhập tên sản phẩm hoặc niche');return;}
-
-  const checkboxes = document.querySelectorAll('#rs-angle-chips input[type=checkbox]:checked');
-  const angles = Array.from(checkboxes).map(c=>c.value);
-  const model = document.getElementById('rs-ai-model').value;
-  const lang = document.getElementById('rs-lang').value;
-
-  const btn = event.target;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> AI đang nghiên cứu...';
-
-  const n8nWebhook = (window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl)
-    ? window.AIOS_CONFIG.n8nUrl + '/webhook/aios-analytics-chat'
-    : null;
-
-  const payload = { query, angles, model, lang, workspace_id: currentWS?.id || 'default' };
-
-  if(n8nWebhook){
-    fetch(n8nWebhook, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    })
-    .then(r=>r.json())
-    .then(data=>{
-      researchRenderResults(data.pains || [], 'AI Research: '+query, query);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    })
-    .catch(()=>{
-      researchRenderDemo('ai', [query]);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    });
-  } else {
-    setTimeout(()=>{
-      researchRenderDemo('ai', [query]);
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-brain"></i> AI Research + Phân tích';
-    }, 2000);
-  }
-}
-
-function researchRenderDemo(type, sources){
-  // Generate realistic demo pains based on source
-  const srcText = sources.join(', ');
-  const demoPains = [
-    { pain_text:'Da bị kích ứng sau khi dùng sản phẩm lần đầu, nổi mẩn đỏ mấy ngày', category:'skin', frequency:8, urgency:4, keywords:['kích ứng','đỏ','nhạy cảm'], selected:true },
-    { pain_text:'Cảm giác bết dính không thấm vào da, mặc quần áo bị dính vào', category:'skin', frequency:7, urgency:3, keywords:['bết','không thấm','dính'], selected:true },
-    { pain_text:'Dùng được 1 tuần không thấy kết quả, mất niềm tin vào sản phẩm', category:'skin', frequency:9, urgency:4, keywords:['không hiệu quả','lâu','kết quả'], selected:true },
-    { pain_text:'Giá quá cao so với kỳ vọng, lo sợ mua về không phù hợp da mình', category:'other', frequency:6, urgency:3, keywords:['giá cao','không phù hợp','lo ngại'], selected:false },
-    { pain_text:'Mùi hương quá nồng khiến bị đau đầu, đặc biệt lúc sáng sớm', category:'other', frequency:5, urgency:2, keywords:['mùi nồng','đau đầu','khó chịu'], selected:false },
-    { pain_text:'Da vẫn khô sau khi dùng, không đủ ẩm cho ban đêm', category:'skin', frequency:8, urgency:4, keywords:['da khô','thiếu ẩm','ban đêm'], selected:true },
-  ];
-  researchRenderResults(demoPains, (type==='shopee'?'Shopee Reviews':'AI Research')+': '+srcText, srcText);
-}
-
-function researchRenderResults(pains, source, query){
-  const area = document.getElementById('research-results-area');
-  const list = document.getElementById('research-results-list');
-  area.style.display = 'block';
-
-  if(!pains.length){
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;">Không tìm thấy pain points. Thử nguồn khác.</div>';
-    return;
-  }
-
-  list.innerHTML = pains.map((p,i)=>`
-    <div class="card" style="padding:14px;" id="rp-${i}">
-      <div style="display:flex;align-items:flex-start;gap:12px;">
-        <input type="checkbox" id="rp-chk-${i}" ${p.selected!==false?'checked':''} style="width:auto;margin-top:3px;">
-        <div style="flex:1;">
-          <div style="font-size:14px;margin-bottom:8px;line-height:1.5;">${p.pain_text}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-            <span class="badge badge-cyan">${p.category||'other'}</span>
-            <span class="badge badge-${p.urgency>=4?'red':'yellow'}">Urgency ${p.urgency||3}/5</span>
-            <span class="badge badge-muted">Freq ${p.frequency||5}/10</span>
-            ${(p.keywords||[]).map(k=>`<span class="badge badge-purple">${k}</span>`).join('')}
-          </div>
-        </div>
-        <button class="btn btn-success btn-sm" onclick="researchPushOne(${i})" title="Push vào Pain Bank">
-          <i class="fa fa-upload"></i>
-        </button>
-      </div>
-    </div>
-  `).join('');
-
-  // Store pains in temp state
-  window._researchPains = pains;
-  window._researchSource = source;
-  window._researchQuery = query;
-}
-
-function researchPushOne(idx){
-  const pain = window._researchPains?.[idx];
-  if(!pain) return;
-  const entry = {
-    id: uid(),
-    text: pain.pain_text,
-    category: pain.category||'other',
-    source: 'research',
-    keywords: pain.keywords||[],
-    urgency: pain.urgency||3,
-    addedAt: now()
-  };
-  if(!S.pains) S.pains = [];
-  S.pains.push(entry);
-  save();
-  renderPainBank();
-  updateBadges();
-  const btn = document.querySelector(`#rp-${idx} .btn-success`);
-  if(btn){ btn.innerHTML='<i class="fa fa-check"></i>'; btn.disabled=true; btn.style.background='var(--muted)'; }
-}
-
-function researchPushAll(){
-  if(!window._researchPains) return;
-  let pushed = 0;
-  window._researchPains.forEach((pain, i)=>{
-    const chk = document.getElementById('rp-chk-'+i);
-    if(chk && chk.checked){
-      const entry = {
-        id: uid(),
-        text: pain.pain_text,
-        category: pain.category||'other',
-        source: 'research',
-        keywords: pain.keywords||[],
-        urgency: pain.urgency||3,
-        addedAt: now()
-      };
-      if(!S.pains) S.pains = [];
-      S.pains.push(entry);
-      pushed++;
-    }
-  });
-  save();
-  renderPainBank();
-  updateBadges();
-  if(pushed>0) emit('research.pains_pushed',{count:pushed});
-
-  // Save to history
-  if(!S.researchHistory) S.researchHistory=[];
-  S.researchHistory.unshift({
-    id: uid(),
-    ts: now(),
-    source: window._researchSource||'unknown',
-    query: window._researchQuery||'',
-    totalFound: window._researchPains.length,
-    pushed
-  });
-  save();
-  renderResearchHistory();
-  document.getElementById('badge-research').textContent = S.researchHistory.length;
-
-  // Feedback
-  const btn = document.querySelector('#research-results-area .btn-success');
-  if(btn){ btn.innerHTML=`<i class="fa fa-check"></i> Đã push ${pushed} pain`; btn.disabled=true; setTimeout(()=>{btn.innerHTML='<i class="fa fa-upload"></i> Push tất cả vào Pain Bank';btn.disabled=false;},3000); }
-}
-
-function researchExportCSV(){
-  if(!window._researchPains||!window._researchPains.length){alert('Không có dữ liệu để export');return;}
-  const header = 'pain_text,category,frequency,urgency,keywords';
-  const rows = window._researchPains.map(p=>`"${p.pain_text}",${p.category},${p.frequency||5},${p.urgency||3},"${(p.keywords||[]).join(';')}"`);
-  const csv = [header, ...rows].join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `research_pains_${today()}.csv`;
-  a.click();
-}
-
-function researchClearResults(){
-  document.getElementById('research-results-area').style.display='none';
-  document.getElementById('research-results-list').innerHTML='';
-  window._researchPains = null;
-}
-
-function renderResearchHistory(){
-  const tbody = document.getElementById('research-history-tbody');
-  if(!tbody) return;
-  if(!S.researchHistory||!S.researchHistory.length){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">Chưa có lịch sử</td></tr>';
-    return;
-  }
-  tbody.innerHTML = S.researchHistory.slice(0,20).map(h=>`
-    <tr>
-      <td style="color:var(--muted);font-size:11px;">${h.ts}</td>
-      <td><span class="badge badge-cyan">${h.source}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.query||'—'}</td>
-      <td><span class="badge badge-green">${h.totalFound} pain</span></td>
-      <td><span class="badge badge-purple">${h.pushed} pushed</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="researchDeleteHistory('${h.id}')"><i class="fa fa-trash"></i></button></td>
-    </tr>
-  `).join('');
-  document.getElementById('badge-research').textContent = S.researchHistory.length;
-}
-
-function researchDeleteHistory(id){
-  S.researchHistory = (S.researchHistory||[]).filter(h=>h.id!==id);
-  save();
-  renderResearchHistory();
-}
-
-// ============================================================
-// ===== ANALYTICS CHAT FUNCTIONS =====
-// ============================================================
-
-let chatIsThinking = false;
-
-function renderChatContext(){
-  const el = document.getElementById('chat-context-summary');
-  if(!el) return;
-  const pains = S.pains||[];
-  const angles = S.angles||[];
-  const approved = angles.filter(a=>a.status==='approved');
-  const wins = angles.filter(a=>a.status==='win');
-  const queue = S.approvalQueue||[];
-  el.innerHTML = [
-    {label:'Pain Bank', val:pains.length, icon:'fa-brain', color:'cyan'},
-    {label:'Tổng Angles', val:angles.length, icon:'fa-flask', color:'purple'},
-    {label:'Approved', val:approved.length, icon:'fa-check', color:'green'},
-    {label:'WIN angles', val:wins.length, icon:'fa-trophy', color:'yellow'},
-  ].map(s=>`
-    <div class="stat-card">
-      <div class="stat-val" style="color:var(--${s.color})">${s.val}</div>
-      <div class="stat-label"><i class="fa ${s.icon} fa-fw"></i> ${s.label}</div>
-    </div>
-  `).join('');
-}
-
-function chatBuildContext(){
-  const pains = S.pains||[];
-  const angles = S.angles||[];
-  const queue = S.approvalQueue||[];
-  const sheets = S.sheets||{};
-
-  return {
-    pain_bank: {
-      total: pains.length,
-      by_category: pains.reduce((acc,p)=>{acc[p.category||'other']=(acc[p.category||'other']||0)+1;return acc;},{}),
-      sources: [...new Set(pains.map(p=>p.source||'manual'))],
-      top_pains: pains.slice(0,10).map(p=>({text:p.text,category:p.category,urgency:p.urgency||3}))
-    },
-    angles: {
-      total: angles.length,
-      by_status: angles.reduce((acc,a)=>{acc[a.status||'draft']=(acc[a.status||'draft']||0)+1;return acc;},{}),
-      recent: angles.slice(-10).map(a=>({
-        id:a.id,title:a.title||a.p4||'',status:a.status||'draft',
-        persona:a.p1||'',pain:a.p2||'',hook_rate:a.hookRate||null,
-        intent_comments:a.intentComments||null,sales:a.sales||null,
-        created:a.createdAt||''
-      })),
-      wins: angles.filter(a=>a.status==='win').map(a=>({title:a.title||a.p4||'',hook_rate:a.hookRate,sales:a.sales}))
-    },
-    approval_queue: {
-      total: queue.length,
-      pending: queue.filter(q=>!q.approved&&!q.rejected).length,
-      approved_today: queue.filter(q=>q.approved && q.approvedAt && q.approvedAt.includes(today())).length
-    },
-    workspace: currentWS ? { name:currentWS.name, product:S.product } : { name:'Default', product:S.product },
-    research_history: (S.researchHistory||[]).slice(0,5),
-    kaizen: {
-      total_logs: (S.kaizen?.log||[]).length,
-      total_practices: (S.kaizen?.practices||[]).length
-    }
-  };
-}
-
-async function chatSend(){
-  const input = document.getElementById('chat-input');
-  const question = input.value.trim();
-  if(!question||chatIsThinking) return;
-  input.value = '';
-  chatAppendMessage('user', question);
-  await chatAsk(question);
-}
-
-async function chatAsk(question){
-  if(chatIsThinking) return;
-  chatIsThinking = true;
-
-  // Clear default empty state
-  const win = document.getElementById('chat-window');
-  const empty = win.querySelector('div[style*="margin:auto"]');
-  if(empty) empty.remove();
-
-  if(document.getElementById('chat-input')) document.getElementById('chat-input').value='';
-  chatAppendMessage('user', question);
-  const thinkId = chatAppendThinking();
-
-  const context = chatBuildContext();
-  const contextStr = JSON.stringify(context, null, 2);
-
-  const n8nWebhook = (window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl)
-    ? window.AIOS_CONFIG.n8nUrl + (window.AIOS_CONFIG.analyticsChat || '/webhook/aios-analytics-chat')
-    : null;
-
-  const anthropicKey = window.AIOS_CONFIG?.anthropicApiKey || null;
-
-  let answer = '';
-
-  try {
-    if(anthropicKey){
-      // Direct Anthropic call
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{
-          'x-api-key': anthropicKey,
-          'anthropic-version':'2023-06-01',
-          'content-type':'application/json'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          system: `Bạn là Analytics AI của hệ thống ANGLE WIN AIOS — chuyên phân tích dữ liệu content TikTok.
-Bạn có quyền truy cập vào toàn bộ dữ liệu workspace hiện tại dưới dạng JSON.
-Trả lời ngắn gọn, súc tích, dùng số liệu cụ thể từ dữ liệu.
-Dùng emoji và format markdown nhẹ để dễ đọc.
-Nếu dữ liệu chưa đủ để trả lời chính xác, nói rõ cần thêm dữ liệu gì.
-
-DATA CONTEXT:
-${contextStr}`,
-          messages:[{role:'user',content:question}]
-        })
-      });
-      const data = await res.json();
-      answer = data.content?.[0]?.text || 'Không thể lấy phản hồi từ AI.';
-    } else if(n8nWebhook){
-      const res = await fetch(n8nWebhook, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ question, context, workspace_id: currentWS?.id||'default' })
-      });
-      const data = await res.json();
-      answer = data.answer || 'Không nhận được phản hồi từ n8n.';
-    } else {
-      // Offline mode — local analysis
-      answer = chatLocalAnalyze(question, context);
-    }
-  } catch(e) {
-    answer = chatLocalAnalyze(question, context);
-  }
-
-  // Save to chat history
-  if(!S.chatHistory) S.chatHistory=[];
-  S.chatHistory.push({ q: question, a: answer, ts: now() });
-  if(S.chatHistory.length>100) S.chatHistory=S.chatHistory.slice(-100);
-  save();
-
-  chatIsThinking = false;
-  document.getElementById(thinkId).remove();
-  chatAppendMessage('ai', answer);
-}
-
-function chatLocalAnalyze(question, ctx){
-  // Basic offline analysis without API key
-  const q = question.toLowerCase();
-  const angles = ctx.angles;
-  const pains = ctx.pain_bank;
-
-  if(q.includes('pain') && q.includes('nhiều')){
-    const top = Object.entries(pains.by_category).sort((a,b)=>b[1]-a[1]);
-    return `**Pain category nhiều nhất:**\n${top.map((e,i)=>`${i+1}. ${e[0]}: **${e[1]}** pains`).join('\n')}\n\nTổng Pain Bank: **${pains.total}** entries`;
-  }
-  if(q.includes('hook rate') || q.includes('hook cao')){
-    const wins = angles.wins;
-    if(!wins.length) return '⚠️ Chưa có angle WIN nào. Cần chạy thêm video để có dữ liệu hook rate.';
-    const sorted = wins.filter(a=>a.hook_rate).sort((a,b)=>b.hook_rate-a.hook_rate);
-    if(!sorted.length) return '⚠️ Các WIN angles chưa có dữ liệu hook rate. Nhập số liệu vào B4 — Kết Quả.';
-    return `**Top angles theo Hook Rate:**\n${sorted.slice(0,5).map((a,i)=>`${i+1}. "${a.title}" — Hook: **${a.hook_rate}%**`).join('\n')}`;
-  }
-  if(q.includes('approve') || q.includes('approved')){
-    const byStatus = angles.by_status;
-    return `**Phân bổ Angles theo trạng thái:**\n${Object.entries(byStatus).map(e=>`• ${e[0]}: **${e[1]}**`).join('\n')}\n\n📋 Approval Queue đang có **${ctx.approval_queue.pending}** angles chờ review.`;
-  }
-  if(q.includes('win')){
-    if(!angles.wins.length) return '⚠️ Chưa có angle WIN. Angle đạt WIN khi: Hook Rate ≥40% + Intent Comments ≥10 + Sales >0.';
-    return `**${angles.wins.length} Angle WIN:**\n${angles.wins.map(a=>`• "${a.title}"${a.hook_rate?' — Hook '+a.hook_rate+'%':''}${a.sales?' — '+a.sales+' đơn':''}`).join('\n')}`;
-  }
-  if(q.includes('tổng') || q.includes('bao nhiêu')){
-    return `**Tóm tắt workspace "${ctx.workspace.name}":**\n• Pain Bank: **${pains.total}** entries\n• Tổng Angles: **${angles.total}**\n• Approved: **${angles.by_status['approved']||0}**\n• WIN: **${angles.wins.length}**\n• Kaizen Logs: **${ctx.kaizen.total_logs}**`;
-  }
-  if(q.includes('persona')){
-    const personaMap = {};
-    (ctx.angles.recent||[]).forEach(a=>{
-      if(a.persona){ personaMap[a.persona]=(personaMap[a.persona]||0)+1; }
-    });
-    if(!Object.keys(personaMap).length) return '⚠️ Chưa có dữ liệu persona. Thêm thông tin P1 khi tạo angle.';
-    const top = Object.entries(personaMap).sort((a,b)=>b[1]-a[1]);
-    return `**Persona xuất hiện nhiều nhất:**\n${top.map((e,i)=>`${i+1}. ${e[0]}: **${e[1]}** angles`).join('\n')}`;
-  }
-
-  return `📊 **Phân tích tổng quan workspace "${ctx.workspace.name}":**\n\n• Pain Bank: **${pains.total}** entries (${Object.keys(pains.by_category).length} categories)\n• Angles: **${angles.total}** total | **${angles.wins.length}** WIN\n• Queue: **${ctx.approval_queue.pending}** chờ review\n\n💡 *Để phân tích chi tiết hơn, hãy cấu hình Anthropic API key trong AIOS Config.*`;
-}
-
-function chatAppendMessage(role, text){
-  const win = document.getElementById('chat-window');
-  const div = document.createElement('div');
-  div.style.cssText = role==='user'
-    ? 'align-self:flex-end;background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);border-radius:10px 10px 2px 10px;padding:10px 14px;max-width:75%;'
-    : 'align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 10px 2px;padding:10px 14px;max-width:85%;';
-
-  // Convert markdown-ish to HTML
-  const formatted = text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
-
-  div.innerHTML = role==='user'
-    ? `<div style="font-size:13px;">${formatted}</div>`
-    : `<div style="display:flex;gap:8px;align-items:flex-start;"><div style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(167,139,250,.3);display:flex;align-items:center;justify-content:center;font-size:11px;">AI</div><div style="font-size:13px;line-height:1.6;">${formatted}</div></div>`;
-
-  win.appendChild(div);
-  win.scrollTop = win.scrollHeight;
-  return div;
-}
-
-function chatAppendThinking(){
-  const win = document.getElementById('chat-window');
-  const id = 'thinking-'+Date.now();
-  const div = document.createElement('div');
-  div.id = id;
-  div.style.cssText = 'align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;';
-  div.innerHTML = '<div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);"><i class="fa fa-spinner fa-spin"></i> AI đang phân tích dữ liệu...</div>';
-  win.appendChild(div);
-  win.scrollTop = win.scrollHeight;
-  return id;
-}
-
-function chatClear(){
-  const win = document.getElementById('chat-window');
-  win.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;margin:auto;">
-    <i class="fa fa-comments" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px;"></i>
-    Đặt câu hỏi về dữ liệu angle, pain bank, hoặc KPI của bạn
-  </div>`;
-  S.chatHistory = [];
-  save();
-}
-
-function chatExport(){
-  if(!S.chatHistory||!S.chatHistory.length){alert('Chưa có lịch sử chat');return;}
-  const text = S.chatHistory.map(c=>`[${c.ts}]\nQ: ${c.q}\nA: ${c.a}\n`).join('\n---\n');
-  const blob = new Blob([text], {type:'text/plain'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `analytics_chat_${today()}.txt`;
-  a.click();
-}
-
-// ============================================================
-// ===== AIOS CONFIG (API keys, n8n URL) =====
-// ============================================================
-
-// ⚙️ Pre-configured n8n endpoints (auto-set by deployment)
-const _savedConfig = JSON.parse(localStorage.getItem('aios_config') || '{}');
-window.AIOS_CONFIG = Object.assign({
-  n8nUrl: 'https://srv-lhzd2.auto.123host.asia',
-  analyticsChat: '/webhook/aios-analytics-chat',
-  chatwootPain: '/webhook/aios-chatwoot-pain'
-}, _savedConfig);
-
-function saveAIOSConfig(cfg){
-  Object.assign(window.AIOS_CONFIG, cfg);
-  localStorage.setItem('aios_config', JSON.stringify(window.AIOS_CONFIG));
-}
-
-
-// ============================================================
-// ===== URL MANAGER (Research tab) =====
-// ============================================================
-
-function urlMgrGetConfig() {
-  if (!S.researchConfig) S.researchConfig = { ownUrls: [], competitorUrls: [] };
-  return S.researchConfig;
-}
-
-function urlMgrRender() {
-  const cfg = urlMgrGetConfig();
-  renderUrlList('own-urls-list', cfg.ownUrls, 'own');
-  renderUrlList('competitor-urls-list', cfg.competitorUrls, 'competitor');
-}
-
-function renderUrlList(containerId, urls, type) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (!urls || !urls.length) {
-    el.innerHTML = `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px;">Chưa có URL — nhấn Thêm</div>`;
-    return;
-  }
-  el.innerHTML = urls.map((u, i) => `
-    <div style="display:flex;gap:6px;align-items:center;" id="url-row-${type}-${i}">
-      <input type="text" value="${u.label || ''}" placeholder="Tên nhãn" 
-             style="width:90px;font-size:11px;padding:5px 8px;"
-             onchange="urlMgrUpdateField('${type}',${i},'label',this.value)">
-      <input type="text" value="${u.url || ''}" placeholder="https://shopee.vn/..."
-             style="flex:1;font-size:11px;padding:5px 8px;"
-             onchange="urlMgrUpdateField('${type}',${i},'url',this.value)">
-      <button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="urlMgrRemove('${type}',${i})">
-        <i class="fa fa-times"></i>
-      </button>
-    </div>
-  `).join('');
-}
-
-function urlMgrAdd(type) {
-  const cfg = urlMgrGetConfig();
-  const list = type === 'own' ? cfg.ownUrls : cfg.competitorUrls;
-  list.push({ label: '', url: '' });
-  save();
-  urlMgrRender();
-  // Focus the label input of the new row
-  const newIndex = list.length - 1;
-  setTimeout(() => {
-    const row = document.querySelector(`#url-row-${type}-${newIndex} input`);
-    if (row) row.focus();
-  }, 50);
-}
-
-function urlMgrRemove(type, index) {
-  const cfg = urlMgrGetConfig();
-  const list = type === 'own' ? cfg.ownUrls : cfg.competitorUrls;
-  list.splice(index, 1);
-  save();
-  urlMgrRender();
-}
-
-function urlMgrUpdateField(type, index, field, value) {
-  const cfg = urlMgrGetConfig();
-  const list = type === 'own' ? cfg.ownUrls : cfg.competitorUrls;
-  if (list[index]) list[index][field] = value;
-  save();
-}
-
-function urlMgrGetAllUrls() {
-  const cfg = urlMgrGetConfig();
-  const own = (cfg.ownUrls || [])
-    .filter(u => u.url && u.url.trim())
-    .map(u => ({ url: u.url.trim(), type: 'own', label: u.label || u.url }));
-  const competitor = (cfg.competitorUrls || [])
-    .filter(u => u.url && u.url.trim())
-    .map(u => ({ url: u.url.trim(), type: 'competitor', label: u.label || u.url }));
-  return [...own, ...competitor];
-}
-
-// Override researchShopee to use URL Manager
-function researchShopee() {
-  const urls = urlMgrGetAllUrls();
-  if (!urls.length) {
-    alert('Chưa có URL nào. Nhấn "+ Thêm" để thêm URL sản phẩm Shopee.');
-    return;
-  }
-
-  const btn = document.querySelector('[onclick="researchShopee()"]');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang scrape...'; }
-
-  const n8nWebhook = window.AIOS_CONFIG.n8nUrl + '/webhook/aios-research-scrape';
-
-  fetch(n8nWebhook, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      urls,
-      workspace_id: currentWS?.id || 'default',
-      workspace_name: currentWS?.name || 'Default'
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Chạy Scrape Ngay'; }
-    if (data.ok) {
-      // Show success + pull demo results for UI
-      researchRenderDemo('shopee', urls.map(u => u.url));
-      alert(`✅ Scrape xong! ${data.pains_found || '?'} pain mới đã được extract.`);
-      // Save to history
-      if (!S.researchHistory) S.researchHistory = [];
-      S.researchHistory.unshift({
-        id: uid(), ts: now(),
-        source: 'Firecrawl Shopee',
-        query: urls.map(u => u.label).join(', '),
-        totalFound: data.pains_found || 0,
-        pushed: data.pains_found || 0
-      });
-      save(); renderResearchHistory();
-    } else {
-      alert('Lỗi từ n8n: ' + (data.error || 'Unknown'));
-    }
-  })
-  .catch(err => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-play"></i> Chạy Scrape Ngay'; }
-    // Demo mode fallback
-    researchRenderDemo('shopee', urls.map(u => u.url));
-    console.warn('n8n offline, demo mode:', err.message);
-  });
-}
-
-// Patch renderResearchHistory to also call urlMgrRender (hoàn tất patch)
-const _origRenderResearch = typeof renderResearchHistory === 'function' ? renderResearchHistory : null;
-renderResearchHistory = function(){
-  if(_origRenderResearch) _origRenderResearch();
-  if(typeof urlMgrRender === 'function') urlMgrRender();
-};
 </script>
 </body>
 </html>

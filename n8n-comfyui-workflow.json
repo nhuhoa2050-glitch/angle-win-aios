@@ -1,0 +1,309 @@
+{
+  "name": "AIOS — ComfyUI Image Generator + FB Ads Upload",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comfyui-trigger",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node_webhook_comfy",
+      "name": "Webhook — Approved Angle",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "aios-comfyui-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: { angle_id, angle_title, p1_persona, p2_pain, p3_moment, p4_promise, p5_proof, p6_pull, product_name, product_image_url }\nconst d = $input.first().json;\n\n// Build 6 distinct visual prompts from angle data\nconst baseStyle = 'photorealistic product advertisement, Vietnamese female model, clean white background, professional lighting, high quality 8k, sharp focus';\nconst productName = d.product_name || 'skincare product';\nconst pain = d.p2_pain || 'skin problem';\nconst promise = d.p4_promise || 'radiant skin';\nconst persona = d.p1_persona || 'Vietnamese woman 25-35';\n\nconst prompts = [\n  {\n    id: 'hook_before',\n    label: 'Hook — Before State',\n    prompt: `${persona} looking frustrated touching face, ${pain}, bathroom mirror, natural light, ${baseStyle}, --ar 4:5`,\n    negative: 'ugly, blurry, low quality, text overlay, watermark'\n  },\n  {\n    id: 'hook_after',\n    label: 'Hook — After Transformation',\n    prompt: `${persona} confident radiant smile, glowing skin, holding ${productName}, ${promise}, soft warm lighting, ${baseStyle}, --ar 4:5`,\n    negative: 'ugly, blurry, low quality, text overlay, watermark'\n  },\n  {\n    id: 'product_hero',\n    label: 'Product Hero Shot',\n    prompt: `${productName} product bottle on marble surface, beauty editorial photography, bokeh background, luxury skincare, ${baseStyle}, --ar 1:1`,\n    negative: 'person, model, ugly, blurry, text'\n  },\n  {\n    id: 'lifestyle_use',\n    label: 'Lifestyle — In Use',\n    prompt: `${persona} applying ${productName} morning routine, bathroom vanity, golden hour light, authentic lifestyle, ${baseStyle}, --ar 4:5`,\n    negative: 'ugly, blurry, low quality, staged'\n  },\n  {\n    id: 'proof_social',\n    label: 'Social Proof — Crowd',\n    prompt: `group of happy Vietnamese women beautiful skin, diverse ages 20-40, bright studio, ${productName} product visible, ${baseStyle}, --ar 16:9`,\n    negative: 'ugly, blurry, fake looking'\n  },\n  {\n    id: 'cta_urgency',\n    label: 'CTA — Urgency',\n    prompt: `${persona} excited pointing at ${productName} product, vibrant colors, energetic pose, e-commerce style, clean background, ${baseStyle}, --ar 4:5`,\n    negative: 'ugly, blurry, text overlay'\n  }\n];\n\nreturn prompts.map(p => ({\n  json: {\n    ...p,\n    angle_id: d.angle_id,\n    angle_title: d.angle_title,\n    product_image_url: d.product_image_url || '',\n    workspace_id: d.workspace_id || 'default'\n  }\n}));"
+      },
+      "id": "node_build_prompts",
+      "name": "Build 6 Prompts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.COMFYUI_BASE_URL }}/prompt",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "prompt": {
+            "3": {
+              "class_type": "KSampler",
+              "inputs": {
+                "cfg": 7,
+                "denoise": 1,
+                "latent_image": ["5", 0],
+                "model": ["4", 0],
+                "negative": ["7", 0],
+                "positive": ["6", 0],
+                "sampler_name": "euler",
+                "scheduler": "normal",
+                "seed": "={{ Math.floor(Math.random() * 999999999) }}",
+                "steps": 20
+              }
+            },
+            "4": {
+              "class_type": "CheckpointLoaderSimple",
+              "inputs": { "ckpt_name": "{{ $env.COMFYUI_MODEL || 'dreamshaper_8.safetensors' }}" }
+            },
+            "5": {
+              "class_type": "EmptyLatentImage",
+              "inputs": { "batch_size": 1, "height": 1024, "width": 832 }
+            },
+            "6": {
+              "class_type": "CLIPTextEncode",
+              "inputs": {
+                "clip": ["4", 1],
+                "text": "={{ $json.prompt }}"
+              }
+            },
+            "7": {
+              "class_type": "CLIPTextEncode",
+              "inputs": {
+                "clip": ["4", 1],
+                "text": "={{ $json.negative }}"
+              }
+            },
+            "8": {
+              "class_type": "VAEDecode",
+              "inputs": { "samples": ["3", 0], "vae": ["4", 2] }
+            },
+            "9": {
+              "class_type": "SaveImage",
+              "inputs": { "filename_prefix": "={{ 'aios_' + $json.angle_id + '_' + $json.id }}", "images": ["8", 0] }
+            }
+          },
+          "client_id": "aios_n8n"
+        },
+        "options": {}
+      },
+      "id": "node_comfyui_generate",
+      "name": "ComfyUI — Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Poll ComfyUI for result URL\nconst promptId = $input.first().json.prompt_id;\nconst baseUrl = process.env.COMFYUI_BASE_URL;\nconst imageId = $input.first().json.id;\nconst angleId = $input.first().json.angle_id;\n\n// ComfyUI saves to output folder — build the expected filename\nconst filename = `aios_${angleId}_${imageId}_00001_.png`;\n\nreturn [{\n  json: {\n    prompt_id: promptId,\n    image_filename: filename,\n    image_url: `${baseUrl}/view?filename=${encodeURIComponent(filename)}&type=output`,\n    ...$input.first().json\n  }\n}];"
+      },
+      "id": "node_parse_result",
+      "name": "Parse Image URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "waitBetweenRuns": 3000,
+        "maxRuns": 15,
+        "operation": "runOnceForEachItem",
+        "jsCode": "// Wait for ComfyUI to finish (poll history endpoint)\nconst promptId = $input.first().json.prompt_id;\nconst baseUrl = process.env.COMFYUI_BASE_URL;\n\ntry {\n  const res = await $http.request({ url: `${baseUrl}/history/${promptId}`, method: 'GET' });\n  const history = res.data;\n  if (history && history[promptId] && history[promptId].status && history[promptId].status.completed) {\n    return [{ json: { ready: true, ...$input.first().json } }];\n  }\n} catch(e) {}\n\nreturn [{ json: { ready: false, ...$input.first().json } }];"
+      },
+      "id": "node_poll_comfy",
+      "name": "Poll ComfyUI Ready",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.COMFYUI_BASE_URL }}/view",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "filename", "value": "={{ $json.image_filename }}" },
+            { "name": "type", "value": "output" }
+          ]
+        },
+        "responseFormat": "file",
+        "options": {}
+      },
+      "id": "node_fetch_image",
+      "name": "Fetch Image Binary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $env.FB_AD_ACCOUNT_ID }}/adimages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.FB_ACCESS_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "bytes", "value": "={{ $binary.data.data }}" },
+            { "name": "name", "value": "={{ $json.label + ' — ' + $json.angle_title }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node_fb_upload",
+      "name": "Upload to FB Ads Library",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all 6 image hashes returned by FB\nconst items = $input.all();\nconst imageHashes = items.map(i => ({\n  id: i.json.id,\n  label: i.json.label,\n  hash: i.json.images ? Object.values(i.json.images)[0]?.hash : null,\n  angle_id: i.json.angle_id,\n  angle_title: i.json.angle_title,\n  workspace_id: i.json.workspace_id\n}));\n\nreturn [{\n  json: {\n    success: true,\n    angle_id: items[0].json.angle_id,\n    angle_title: items[0].json.angle_title,\n    workspace_id: items[0].json.workspace_id,\n    image_count: imageHashes.filter(h => h.hash).length,\n    images: imageHashes,\n    fb_ad_account: process.env.FB_AD_ACCOUNT_ID,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node_collect_hashes",
+      "name": "Collect FB Image Hashes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.AIOS_WEBHOOK_URL }}/ad-images",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-AIOS-Key", "value": "={{ $env.AIOS_SECRET_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node_notify_aios",
+      "name": "Notify AIOS — Images Ready",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://openapi.zalo.me/v2.0/oa/message/cs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "={{ $env.ZALO_ACCESS_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "recipient": { "user_id": "={{ $env.ZALO_USER_ID }}" },
+          "message": {
+            "text": "=✅ [AIOS] Angle \"{{ $json.angle_title }}\" → {{ $json.image_count }}/6 ảnh FB Ads ready!\n📎 Mở AIOS → Tab Ad Images để review & tạo Creative."
+          }
+        },
+        "options": {}
+      },
+      "id": "node_zalo_notify",
+      "name": "Zalo — Notify User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'ComfyUI pipeline started', angle_id: $('Webhook — Approved Angle').first().json.angle_id }) }}"
+      },
+      "id": "node_webhook_response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [460, 500]
+    }
+  ],
+  "connections": {
+    "Webhook — Approved Angle": {
+      "main": [
+        [
+          { "node": "Build 6 Prompts", "type": "main", "index": 0 },
+          { "node": "Webhook Response", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build 6 Prompts": {
+      "main": [
+        [{ "node": "ComfyUI — Generate Image", "type": "main", "index": 0 }]
+      ]
+    },
+    "ComfyUI — Generate Image": {
+      "main": [
+        [{ "node": "Parse Image URL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Image URL": {
+      "main": [
+        [{ "node": "Poll ComfyUI Ready", "type": "main", "index": 0 }]
+      ]
+    },
+    "Poll ComfyUI Ready": {
+      "main": [
+        [{ "node": "Fetch Image Binary", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Image Binary": {
+      "main": [
+        [{ "node": "Upload to FB Ads Library", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload to FB Ads Library": {
+      "main": [
+        [{ "node": "Collect FB Image Hashes", "type": "main", "index": 0 }]
+      ]
+    },
+    "Collect FB Image Hashes": {
+      "main": [
+        [
+          { "node": "Notify AIOS — Images Ready", "type": "main", "index": 0 },
+          { "node": "Zalo — Notify User", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "aios-comfyui",
+    "templateCredsSetupCompleted": true
+  },
+  "id": "aios-comfyui-001",
+  "tags": ["aios", "comfyui", "fb-ads"],
+  "_comments": {
+    "env_vars_required": [
+      "COMFYUI_BASE_URL — e.g. http://localhost:8188",
+      "COMFYUI_MODEL — safetensors filename in ComfyUI/models/checkpoints/",
+      "FB_AD_ACCOUNT_ID — act_XXXXXXXXX format",
+      "FB_ACCESS_TOKEN — Facebook Marketing API token",
+      "AIOS_WEBHOOK_URL — your AIOS server base URL",
+      "AIOS_SECRET_KEY — shared secret for webhook auth",
+      "ZALO_ACCESS_TOKEN — Zalo OA access token",
+      "ZALO_USER_ID — your Zalo user ID for notifications"
+    ],
+    "trigger": "POST to /webhook/comfyui-trigger with JSON: { angle_id, angle_title, p1_persona, p2_pain, p3_moment, p4_promise, p5_proof, p6_pull, product_name, workspace_id }",
+    "output": "6 images uploaded to FB Ads Library, hashes stored in AIOS, Zalo notification sent",
+    "flow": "Webhook → Build 6 prompts → ComfyUI generate (parallel) → Poll ready → Fetch binary → Upload FB → Collect hashes → Notify AIOS + Zalo"
+  }
+}
