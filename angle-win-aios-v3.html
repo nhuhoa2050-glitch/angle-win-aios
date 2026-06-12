@@ -504,8 +504,9 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
   </div>
   <div id="sheet-cskh">
     <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-primary btn-sm" onclick="openPasteReviews()"><i class="fa fa-clipboard"></i> Dán review Shopee</button>
       <button class="btn btn-success btn-sm" onclick="classifyAndRouteComments()"><i class="fa fa-filter"></i> Lọc &amp; Phân loại Bình luận</button>
-      <span style="font-size:12px;color:var(--muted);align-self:center;">Paste comment thô vào cột "Nội dung" → AI phân loại Pain / Intent / Khen / Spam và route đúng nơi</span>
+      <span style="font-size:12px;color:var(--muted);align-self:center;">Dùng bookmarklet copy review Shopee → "Dán review" → AI phân loại Pain / Intent / Khen / Spam</span>
     </div>
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Ngày</th><th>Kênh</th><th>Nội dung tin nhắn</th><th>Pain trích xuất</th><th>Tags</th><th>Status</th><th>Action</th></tr></thead>
     <tbody id="tbody-cskh"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:20px;">Chưa có dữ liệu</td></tr></tbody></table></div>
@@ -1002,6 +1003,23 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
     </div>
     <div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
       🔑 Lấy key miễn phí: <b>Gemini</b> aistudio.google.com/apikey · <b>Groq</b> console.groq.com/keys · <b>OpenRouter</b> openrouter.ai/keys (lọc model có nhãn <i>:free</i>). Key lưu cục bộ trong trình duyệt (localStorage), không gửi đi đâu ngoài nhà cung cấp.
+    </div>
+  </div>
+</div>
+
+<div id="modal-paste-reviews" class="modal-overlay hidden">
+  <div class="modal" style="width:640px;max-width:94vw;">
+    <div class="modal-header"><div class="modal-title"><i class="fa fa-clipboard" style="color:var(--cyan);"></i> Dán review Shopee → AI phân loại</div><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-paste-reviews')">✕</button></div>
+    <div class="alert alert-info" style="margin-bottom:12px;"><i class="fa fa-info-circle"></i> Mở trang sản phẩm Shopee → bấm <b>bookmarklet "Shopee→AIOS"</b> để copy review → dán JSON vào đây. Hoặc dán <b>mỗi review 1 dòng</b> cũng được. Bấm "Nạp & Phân loại" → AI lọc Pain / Intent / Khen / Spam.</div>
+    <div class="form-group" style="margin-bottom:8px;"><label>Nội dung review (JSON từ bookmarklet hoặc text mỗi dòng 1 review)</label>
+      <textarea id="paste-reviews-input" rows="9" placeholder='{"reviews":[{"text":"Da bị rát sau khi dùng","star":2}]}  —  hoặc dán thẳng từng dòng review'></textarea></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-success" onclick="ingestShopeeReviews(this)" style="flex:1;"><i class="fa fa-wand-magic-sparkles"></i> Nạp &amp; Phân loại bằng AI</button>
+      <button class="btn btn-ghost" onclick="showBookmarklet()"><i class="fa fa-bookmark"></i> Lấy bookmarklet</button>
+    </div>
+    <div id="bookmarklet-box" class="hidden" style="margin-top:12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+      <div style="margin-bottom:6px;">Tạo 1 bookmark mới, dán đoạn dưới vào ô URL (đặt tên "Shopee→AIOS"). Mở trang SP Shopee → bấm bookmark → copy review → quay lại đây dán.</div>
+      <textarea id="bookmarklet-code" rows="4" readonly style="font-family:monospace;font-size:10px;" onclick="this.select()">javascript:(async()=&gt;{var m=location.href.match(/i\.(\d+)\.(\d+)/);if(!m){alert("Mo dung trang san pham Shopee");return}var shop=m[1],item=m[2],all=[],off=0;try{while(off&lt;80){var r=await fetch("/api/v4/item/get_ratings?filter=0&amp;flag=1&amp;itemid="+item+"&amp;limit=20&amp;offset="+off+"&amp;shopid="+shop+"&amp;type=0",{credentials:"include"});var j=await r.json();var it=(j&amp;&amp;j.data&amp;&amp;j.data.ratings)||[];if(!it.length)break;it.forEach(function(x){if(x.comment&amp;&amp;x.comment.trim())all.push({text:x.comment.trim(),star:x.rating_star,author:x.author_username||""})});off+=20}}catch(e){alert("Loi: "+e.message);return}if(!all.length){alert("Khong co review/doi API");return}var p=JSON.stringify({shopid:shop,itemid:item,url:location.href,reviews:all});function d(n){alert("Da copy "+n+" review. Sang AIOS dan vao o Dan review Shopee.")}try{await navigator.clipboard.writeText(p);d(all.length)}catch(e){var t=document.createElement("textarea");t.value=p;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();d(all.length)}})();</textarea>
     </div>
   </div>
 </div>
@@ -1998,8 +2016,8 @@ function _heurClassify(text){
 }
 async function extractPainsFromCSKH(){ return classifyAndRouteComments(); }
 async function classifyAndRouteComments(){
-  const rows=(S.sheets.cskh||[]).filter(r=>(r.message&&r.message.trim())||(r.pain&&r.pain.trim()));
-  if(!rows.length){ alert('CSKH sheet trống — thêm dòng có nội dung trước.'); return; }
+  const rows=(S.sheets.cskh||[]).filter(r=>((r.message&&r.message.trim())||(r.pain&&r.pain.trim())) && (!r.status||r.status==='New'||r.status==='Processed'));
+  if(!rows.length){ alert('Không có bình luận mới để phân loại (các dòng đã được route trước đó).'); return; }
   if(!S.intentBank) S.intentBank=[];
   if(!S.praiseBank) S.praiseBank=[];
   let res=null;
@@ -2039,7 +2057,39 @@ ${RBL_KB_PROMPT}`;
     } else { r.status='Spam/Bỏ'; counts.spam++; }
   });
   save(); renderCSKH(); renderPainBank(); updateBadges();
-  alert(`Đã lọc ${res.length} bình luận:\n• Pain → Bank: ${counts.pain}\n• Intent (chốt đơn): ${counts.intent}\n• Khen (social proof): ${counts.praise}\n• Spam/bỏ: ${counts.spam}${getLLMSettings().key?'':'\n\n(offline heuristic — kết nối Mô hình AI để lọc chính xác hơn)'}`);
+  alert(`Đã lọc ${res.length} bình luận:\n• Pain → Bank: ${counts.pain}\n• Intent (chốt đơn): ${counts.intent}\n• Khen (social proof): ${counts.praise}\n• Spam/bỏ: ${counts.spam}${aiAvailable()?'':'\n\n(offline heuristic — kết nối Mô hình AI để lọc chính xác hơn)'}`);
+}
+
+// ---- Dán review Shopee (từ bookmarklet) → nạp CSKH → AI phân loại ----
+function openPasteReviews(){ const t=document.getElementById('paste-reviews-input'); if(t)t.value=''; const b=document.getElementById('bookmarklet-box'); if(b)b.classList.add('hidden'); openModal('modal-paste-reviews'); }
+function showBookmarklet(){ document.getElementById('bookmarklet-box').classList.remove('hidden'); }
+async function ingestShopeeReviews(btn){
+  const raw=(document.getElementById('paste-reviews-input').value||'').trim();
+  if(!raw){ alert('Dán nội dung review vào ô.'); return; }
+  let reviews=[];
+  try{
+    const j=JSON.parse(raw);
+    if(Array.isArray(j)) reviews=j;
+    else if(Array.isArray(j.reviews)) reviews=j.reviews;
+    else if(j.text) reviews=[j];
+  }catch(e){ reviews=raw.split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({text:t})); }
+  reviews=reviews.map(r=>typeof r==='string'?{text:r}:r).filter(r=>r&&(r.text||'').trim());
+  if(!reviews.length){ alert('Không nhận diện được review. Dán JSON từ bookmarklet hoặc mỗi review 1 dòng.'); return; }
+  if(!S.sheets.cskh) S.sheets.cskh=[];
+  let added=0;
+  reviews.forEach(r=>{
+    const msg=(r.text||'').trim(); if(!msg) return;
+    if(S.sheets.cskh.find(x=>x.message===msg)) return; // tránh trùng
+    S.sheets.cskh.push({id:uid(),date:today(),channel:'Shopee',message:msg,pain:'',tags:r.star?('★'+r.star):'',status:'New'});
+    added++;
+  });
+  save(); renderCSKH(); updateBadges();
+  closeModal('modal-paste-reviews');
+  emit('shopee.ingested',{count:added});
+  if(!added){ alert('Tất cả review đã có sẵn (trùng).'); return; }
+  if(btn){ btn.disabled=true; }
+  // Chạy luôn phân loại bằng AI
+  await classifyAndRouteComments();
 }
 
 // ============================================================
