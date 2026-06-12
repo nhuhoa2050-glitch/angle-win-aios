@@ -973,7 +973,18 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <div class="form-group"><label>Tính năng nổi bật (USP)</label><textarea id="profile-usp" rows="2" placeholder="VD: BHA 2%, xẹp mụn sau 24h, không khô tróc"></textarea></div>
       <div class="form-group"><label>Khoảng giá / Phân khúc</label><input id="profile-price" placeholder="VD: 150-250k, phân khúc tầm trung"></div>
     </div>
-    <div class="form-group" style="margin-bottom:14px;"><label>Nội dung Landing / Tài liệu chi tiết (tuỳ chọn)</label><textarea id="profile-content" rows="4" placeholder="Copy nội dung chi tiết sản phẩm vào đây để AI học sâu hơn..."></textarea></div>
+    <div class="form-group" style="margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label style="margin:0;">Nội dung Landing / Tài liệu chi tiết (tuỳ chọn)</label>
+        <div style="display:flex;gap:6px;">
+          <input type="file" id="profile-file" accept=".txt,.md,.csv,.json,.pdf" style="display:none;" onchange="handleProfileFile(this)">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('profile-file').click()"><i class="fa fa-file-arrow-up"></i> Tải file</button>
+          <button class="btn btn-purple btn-sm" onclick="analyzeProfileFile(this)"><i class="fa fa-wand-magic-sparkles"></i> AI điền hồ sơ từ nội dung</button>
+        </div>
+      </div>
+      <textarea id="profile-content" rows="4" placeholder="Copy nội dung, hoặc Tải file (.txt .md .csv .json .pdf) để AI học sâu hơn..."></textarea>
+      <div id="profile-file-status" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+    </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-primary" onclick="saveProductProfile()" style="flex:1;"><i class="fa fa-save"></i> Lưu Hồ sơ</button>
       <button class="btn btn-warn" onclick="generateSeedPains(this)" style="flex:1;"><i class="fa fa-wand-magic-sparkles"></i> AI tạo Pain từ Hồ sơ</button>
@@ -2275,6 +2286,64 @@ function updateProfileStatus(){
   el.className = 'badge '+(ok?'badge-success':'badge-muted');
 }
 
+// ---- Tải file vào Hồ sơ SP + AI tách hồ sơ ----
+let _pdfjsLoaded=null;
+function _loadPdfJs(){
+  if(_pdfjsLoaded) return _pdfjsLoaded;
+  _pdfjsLoaded=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; resolve(window.pdfjsLib); }catch(e){ reject(e); } };
+    s.onerror=()=>reject(new Error('Không tải được pdf.js (cần internet)'));
+    document.head.appendChild(s);
+  });
+  return _pdfjsLoaded;
+}
+async function _readPdf(file){
+  const lib=await _loadPdfJs();
+  const buf=await file.arrayBuffer();
+  const pdf=await lib.getDocument({data:buf}).promise;
+  let out=''; const maxPages=Math.min(pdf.numPages,30);
+  for(let i=1;i<=maxPages;i++){
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    out+=tc.items.map(it=>it.str).join(' ')+'\n';
+  }
+  return out;
+}
+async function handleProfileFile(input){
+  const file=input.files&&input.files[0]; if(!file) return;
+  const status=document.getElementById('profile-file-status');
+  const ta=document.getElementById('profile-content');
+  status.textContent='Đang đọc '+file.name+'...';
+  try{
+    const ext=(file.name.split('.').pop()||'').toLowerCase();
+    let text = (ext==='pdf') ? await _readPdf(file) : await file.text();
+    text=(text||'').trim();
+    if(!text){ status.textContent='⚠ Không trích được text (PDF có thể là ảnh scan).'; return; }
+    ta.value=(ta.value.trim()? ta.value.trim()+'\n\n':'')+text;
+    status.innerHTML=`✅ Đã nạp <b>${esc(file.name)}</b> (${text.length.toLocaleString('vi-VN')} ký tự). Bấm "AI điền hồ sơ" để tự tách Tên/USP/Tệp khách.`;
+  }catch(e){ status.textContent='Lỗi đọc file: '+e.message; }
+  finally{ input.value=''; }
+}
+async function analyzeProfileFile(btn){
+  const content=document.getElementById('profile-content').value.trim();
+  if(!content){ alert('Chưa có nội dung. Tải file hoặc dán nội dung trước.'); return; }
+  if(!aiAvailable()){ alert('Cần kết nối Mô hình AI (nút trên Approval Queue) hoặc n8n để phân tích.'); return; }
+  const old=btn.innerHTML; btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang phân tích...'; btn.disabled=true;
+  try{
+    const sys='Bạn là chuyên gia phân tích sản phẩm. Từ tài liệu/landing page, trích hồ sơ. Trả về DUY NHẤT JSON: {"name":"tên SP","audience":"tệp khách","usp":"các tính năng nổi bật cách nhau bằng dấu phẩy","price":"khoảng giá/phân khúc"}. Thiếu thông tin nào để chuỗi rỗng.';
+    const out=await aiosLLM(sys,'TÀI LIỆU:\n'+content.slice(0,6000),800);
+    const j=out?parseJSONLoose(out):null;
+    if(!j){ alert('AI không trả kết quả parse được. Thử lại hoặc điền tay.'); return; }
+    const set=(id,v)=>{ const el=document.getElementById(id); if(el && v && !el.value.trim()){ el.value=v; return true; } return false; };
+    const filled=['name','audience','usp','price'].filter(k=>set('profile-'+k, j[k]));
+    document.getElementById('profile-file-status').innerHTML = filled.length
+      ? ('✅ AI đã điền (ô trống): '+filled.join(', ')+'. Kiểm tra rồi "Lưu Hồ sơ".')
+      : 'ℹ Các ô đã có sẵn nội dung — AI không ghi đè. Xoá ô muốn AI điền lại rồi bấm lại.';
+  }catch(e){ alert('Lỗi AI: '+(e.message||e)); }
+  finally{ btn.innerHTML=old; btn.disabled=false; }
+}
 async function generateSeedPains(btn){
   const name = document.getElementById('profile-name').value.trim();
   const usp = document.getElementById('profile-usp').value.trim();
