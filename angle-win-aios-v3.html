@@ -1008,6 +1008,9 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <input id="llm-key" type="password" placeholder="Dán API key..." autocomplete="off"></div>
     <div id="llm-help" style="font-size:11px;color:var(--muted);margin-bottom:12px;"></div>
     <div id="llm-test-result" style="margin-bottom:12px;"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:12px;cursor:pointer;">
+      <input type="checkbox" id="llm-session-only" style="width:auto;"> 🔒 Chỉ lưu key trong phiên này (xoá khi đóng trình duyệt) — nên bật khi dùng máy chung.
+    </label>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost" onclick="testLLM(this)" style="flex:1;"><i class="fa fa-plug"></i> Test kết nối</button>
       <button class="btn btn-primary" onclick="saveLLMConfig()" style="flex:1;"><i class="fa fa-save"></i> Lưu & Kích hoạt</button>
@@ -2205,6 +2208,7 @@ function openLLMModal(){
   if(!s.provider) provSel.value='gemini';
   onLLMProviderChange();
   if(s.model){ const m=document.getElementById('llm-model'); if([...m.options].some(o=>o.value===s.model)) m.value=s.model; }
+  const so=document.getElementById('llm-session-only'); if(so) so.checked=!!window.AIOS_CONFIG?._sessionOnly;
   document.getElementById('llm-test-result').innerHTML='';
   openModal('modal-llm');
 }
@@ -2239,7 +2243,8 @@ function saveLLMConfig(){
   const key=document.getElementById('llm-key').value.trim();
   const keys=Object.assign({}, window.AIOS_CONFIG?.llmKeys||{});
   keys[p]=key;
-  saveAIOSConfig({llmProvider:p, llmModel:model, llmKeys:keys});
+  const sessionOnly = !!document.getElementById('llm-session-only')?.checked;
+  saveAIOSConfig({llmProvider:p, llmModel:model, llmKeys:keys, _sessionOnly:sessionOnly});
   updateLLMLabel();
   emit('llm.configured',{provider:p,model});
   alert('✅ Đã kích hoạt: '+LLM_PROVIDERS[p].label+' · '+model);
@@ -4789,7 +4794,7 @@ function chatLocalAnalyze(question, ctx){
     return `**Persona xuất hiện nhiều nhất:**\n${top.map((e,i)=>`${i+1}. ${e[0]}: **${e[1]}** angles`).join('\n')}`;
   }
 
-  return `📊 **Phân tích tổng quan workspace "${ctx.workspace.name}":**\n\n• Pain Bank: **${pains.total}** entries (${Object.keys(pains.by_category).length} categories)\n• Angles: **${angles.total}** total | **${angles.wins.length}** WIN\n• Queue: **${ctx.approval_queue.pending}** chờ review\n\n💡 *Để phân tích chi tiết hơn, hãy cấu hình Anthropic API key trong AIOS Config.*`;
+  return `📊 **Phân tích tổng quan workspace "${ctx.workspace.name}":**\n\n• Pain Bank: **${pains.total}** entries (${Object.keys(pains.by_category).length} categories)\n• Angles: **${angles.total}** total | **${angles.wins.length}** WIN\n• Queue: **${ctx.approval_queue.pending}** chờ review\n\n💡 *Để phân tích chi tiết hơn, bấm nút "Mô hình AI" (trên Approval Queue) kết nối Gemini/Groq free, hoặc n8n.*`;
 }
 
 function chatAppendMessage(role, text){
@@ -4850,7 +4855,8 @@ function chatExport(){
 // ============================================================
 
 // ⚙️ Pre-configured n8n endpoints (auto-set by deployment)
-const _savedConfig = JSON.parse(localStorage.getItem('aios_config') || '{}');
+// Đọc config: ưu tiên sessionStorage (chế độ an toàn "chỉ phiên này") rồi tới localStorage
+const _savedConfig = JSON.parse(sessionStorage.getItem('aios_config') || localStorage.getItem('aios_config') || '{}');
 window.AIOS_CONFIG = Object.assign({
   n8nUrl: 'https://srv-lhzd2.auto.123host.asia',
   analyticsChat: '/webhook/aios-analytics-chat',
@@ -4859,7 +4865,14 @@ window.AIOS_CONFIG = Object.assign({
 
 function saveAIOSConfig(cfg){
   Object.assign(window.AIOS_CONFIG, cfg);
-  localStorage.setItem('aios_config', JSON.stringify(window.AIOS_CONFIG));
+  const json = JSON.stringify(window.AIOS_CONFIG);
+  if(window.AIOS_CONFIG._sessionOnly){ // an toàn: key chỉ sống trong phiên, xoá khi đóng tab
+    sessionStorage.setItem('aios_config', json);
+    localStorage.removeItem('aios_config');
+  } else {
+    localStorage.setItem('aios_config', json);
+    sessionStorage.removeItem('aios_config');
+  }
 }
 
 
