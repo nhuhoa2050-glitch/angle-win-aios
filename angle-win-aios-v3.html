@@ -216,7 +216,7 @@ label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;}
       <button class="btn btn-primary" id="btn-generate" onclick="generateQueue()"><i class="fa fa-wand-magic-sparkles"></i> Generate Queue</button>
     </div>
   </div>
-  <div class="alert alert-info"><i class="fa fa-bolt"></i><span><strong>Bạn chỉ cần Approve / Reject</strong> — AI đã làm phần còn lại. Mỗi sáng 10 phút là đủ.</span></div>
+  <div class="alert alert-info"><i class="fa fa-bolt"></i><span><strong>Bạn chỉ cần bấm Duyệt / Bỏ</strong> cho mỗi thẻ bên dưới — AI đã viết sẵn. Mỗi sáng 10 phút là đủ. (Duyệt = đồng ý đem đi quay/đăng · Bỏ = không dùng · Sửa = chỉnh lại trước)</span></div>
   <div id="aios-insights" style="display:none;margin-bottom:14px;"></div>
   <div class="card-grid g2" id="queue-grid" style="margin-bottom:20px;">
     <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);background:var(--card);border-radius:10px;border:1px solid var(--border);">
@@ -1766,11 +1766,11 @@ function exportResults(){
 
 // ===== APPROVAL QUEUE =====
 const QUEUE_TEMPLATES=[
-  (p)=>`Tôi là ${p.persona} — và tôi đã bị ${p.pain} trong ${Math.floor(Math.random()*12)+1} tháng cho đến khi...`,
-  (p)=>`Tại sao ${p.persona} như tôi luôn mắc lỗi "${p.pain}"? — Hôm nay mới tìm ra nguyên nhân`,
-  (p)=>`POV: Bạn là ${p.persona} đang bị "${p.pain}" — Đây là điều bạn cần làm ngay`,
-  (p)=>`Sự thật về "${p.pain}" mà ${p.persona} không ai nói với bạn`,
-  (p)=>`${p.persona} ơi, bạn có đang bị "${p.pain}"? Xem ngay cách xử lý trong 60 giây`,
+  (p)=>`Mình là ${p.persona}, từng khổ sở vì "${p.pain}" — cho đến khi tìm ra cách này`,
+  (p)=>`Nếu bạn là ${p.persona} đang gặp cảnh "${p.pain}", hãy xem clip này trước khi mua`,
+  (p)=>`"${p.pain}" — câu chuyện có thật của một ${p.persona}`,
+  (p)=>`${p.persona} ơi, "${p.pain}" không phải lỗi của bạn. Đây là lý do thật sự`,
+  (p)=>`Sự thật về "${p.pain}" mà ít ${p.persona} nào được nghe`,
 ];
 
 function generateQueue(){
@@ -1822,7 +1822,7 @@ function renderQueue(){
         <span class="badge pf-badge">${esc(q.platform||'TikTok')}</span>
       </div>
       <div class="ac-hook" style="font-size:13px;">"${esc(q.hook)}"</div>
-      <div style="font-size:11px;color:var(--muted);margin:4px 0;">P1: ${esc(q.p1)} · P5: ${esc(q.p5)}</div>
+      <div style="font-size:11px;color:var(--muted);margin:4px 0;">👤 ${esc(q.p1)} · 📸 ${esc(q.p5)}</div>
       <div class="ac-actions">
         <button class="btn btn-success btn-sm" onclick="approveVariant('${q.id}')"><i class="fa fa-check"></i> Chọn hướng này</button>
         <button class="btn btn-ghost btn-sm" onclick="editFromQueue('${q.id}')"><i class="fa fa-pen"></i></button>
@@ -1836,30 +1836,31 @@ function renderQueue(){
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">${vs.map(variantCard).join('')}</div>
     </div>`).join('');
+  const pRow=(code,ic,lb,v)=>`<div style="display:flex;gap:6px;align-items:baseline;"><span style="color:var(--purple);font-weight:700;font-size:10px;white-space:nowrap;">${code}</span><span style="color:var(--muted);white-space:nowrap;">${ic} ${lb}:</span><span style="color:var(--text);">${esc((v&&String(v).trim())||'—')}</span></div>`;
+  const qcWord=q=>q>=8?'Rất tốt':q>=6?'Khá':'Cần xem lại';
   const singleCards=singles.map(q=>`
     <div class="approval-card ${q.status}" id="ac-${q.id}">
       <div class="ac-meta">
-        <span class="badge ${q.qc>=8?'badge-green':q.qc>=6?'badge-yellow':'badge-red'}" style="font-size:13px;">QC ${q.qc}/10</span>
-        <span class="badge badge-purple">${esc(q.sourceTag||'AI')}</span>
+        <span class="badge ${q.qc>=8?'badge-green':q.qc>=6?'badge-yellow':'badge-red'}" style="font-size:12px;" title="Điểm AI tự chấm chất lượng angle (1–10)">⭐ ${qcWord(q.qc)} ${q.qc}/10</span>
         ${q.platform?`<span class="badge pf-badge">${esc(q.platform)}</span>`:''}
-        <span style="margin-left:auto;">${q.ts}</span>
+        <span class="badge badge-purple" style="font-size:10px;">${esc(q.sourceTag||'AI')}</span>
+        <span style="margin-left:auto;font-size:10px;">${q.ts}</span>
       </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">📢 Câu mở đầu (Hook) — câu đập vào mắt khách trong 3 giây đầu:</div>
       <div class="ac-hook">"${esc(q.hook)}"</div>
-      <div class="p6-chips">
-        <span class="p6-chip">P1: ${esc(q.p1)}</span>
-        <span class="p6-chip">P2: ${esc(q.p2?.slice(0,30))}</span>
-        <span class="p6-chip">P3: ${esc(q.p3)}</span>
-        <span class="p6-chip">P4: ${esc(q.p4)}</span>
-        <span class="p6-chip">P5: ${esc(q.p5)}</span>
-        <span class="p6-chip">P6: ${esc(q.p6)}</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12px;margin:10px 0;line-height:1.45;">
+        ${pRow('P1','👤','Khách',q.p1)}
+        ${pRow('P2','😣','Nỗi đau',q.p2)}
+        ${pRow('P3','⏰','Thời điểm',q.p3)}
+        ${pRow('P4','✨','Lợi ích',q.p4)}
+        ${pRow('P5','📸','Bằng chứng',q.p5)}
+        ${pRow('P6','👉','CTA (kêu gọi)',q.p6)}
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">
-        <i class="fa fa-quote-left" style="font-size:9px;"></i> Extracted from: ${esc(q.painSource?.slice(0,70))}
-      </div>
+      <div style="font-size:11px;color:var(--muted);"><i class="fa fa-quote-left" style="font-size:8px;"></i> Xuất phát từ nỗi đau thật: ${esc((q.painSource||'').slice(0,70))||'—'}</div>
       <div class="ac-actions">
-        <button class="btn btn-success btn-sm" onclick="approveAngle('${q.id}')"><i class="fa fa-check"></i> Approve</button>
-        <button class="btn btn-danger btn-sm" onclick="startReject('${q.id}')"><i class="fa fa-times"></i> Reject</button>
-        <button class="btn btn-ghost btn-sm" onclick="editFromQueue('${q.id}')"><i class="fa fa-pen"></i> Edit</button>
+        <button class="btn btn-success btn-sm" onclick="approveAngle('${q.id}')" title="Đồng ý — đưa angle này đi sản xuất"><i class="fa fa-check"></i> Duyệt</button>
+        <button class="btn btn-danger btn-sm" onclick="startReject('${q.id}')" title="Bỏ angle này, không dùng"><i class="fa fa-times"></i> Bỏ</button>
+        <button class="btn btn-ghost btn-sm" onclick="editFromQueue('${q.id}')" title="Sửa nội dung trước khi duyệt"><i class="fa fa-pen"></i> Sửa</button>
       </div>
     </div>`).join('');
   grid.innerHTML=clusterBoxes+singleCards;
@@ -2725,6 +2726,29 @@ function renderPlaybook(){ showPlaybook('funnel'); } // gọi khi mở tab
 
 function renderPbFunnel(){
   const el=document.getElementById('pb-funnel'); if(!el)return;
+  // LINK với dữ liệu thật: đối chiếu angle/pain với 6 bước phễu
+  const items=[...(S.approvalQueue||[]), ...(S.angles||[])];
+  const cov={}; items.forEach(a=>{ const st=a.funnelStep; if(st) cov[st]=(cov[st]||0)+1; });
+  const totalTagged=Object.values(cov).reduce((a,b)=>a+b,0);
+  const missing=RBL_KB.funnel.filter(s=>!cov[s.n]);
+  const painN=(S.pains||[]).length, angleN=items.length;
+  const covCells=RBL_KB.funnel.map(s=>`<div style="text-align:center;flex:1;min-width:64px;">
+    <div style="font-size:18px;font-weight:700;color:${cov[s.n]?'var(--green)':'var(--muted)'};">${cov[s.n]||0}</div>
+    <div style="font-size:10px;color:var(--muted);">B${s.n} ${esc(s.name)}</div></div>`).join('');
+  const suggestion = !angleN ? 'Chưa có angle nào — sang Approval Queue bấm Generate để AI tạo angle bám phễu.'
+    : !totalTagged ? 'Angle hiện chưa gắn bước phễu (angle cũ). Generate angle mới (AI) sẽ tự gắn bước.'
+    : missing.length ? ('Đang THIẾU angle ở: '+missing.map(s=>'Bước '+s.n+' '+s.name).join(', ')+'. Nên tạo thêm để phủ đủ hành trình — đặc biệt Bước 5 (Dẫn về) hay bị bỏ quên.')
+    : '✅ Đã phủ đủ cả 6 bước phễu. Tốt!';
+  const linkCard=`<div class="card" style="margin-bottom:16px;border-color:var(--purple);">
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="fa fa-diagram-project" style="color:var(--purple);"></i> Áp dụng vào dữ liệu của bạn</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Pain Bank: <b style="color:var(--text);">${painN}</b> · Angle: <b style="color:var(--text);">${angleN}</b> · Đã gắn bước phễu: <b style="color:var(--text);">${totalTagged}</b></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;background:#1a1a28;border-radius:8px;padding:10px;margin-bottom:10px;">${covCells}</div>
+    <div class="alert alert-info" style="margin:0;border-color:${missing.length&&totalTagged?'var(--yellow)':'var(--cyan)'};"><i class="fa fa-lightbulb"></i> <b>Gợi ý:</b> ${esc(suggestion)}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-primary btn-sm" onclick="showTab('approval')"><i class="fa fa-wand-magic-sparkles"></i> Tạo angle (Generate)</button>
+      <button class="btn btn-ghost btn-sm" onclick="showTab('b1')"><i class="fa fa-brain"></i> Xem Pain Bank</button>
+    </div>
+  </div>`;
   const rows=RBL_KB.funnel.map(s=>`<tr>
     <td><span class="badge badge-purple">${s.n}</span></td>
     <td style="font-weight:700;">${esc(s.name)}</td>
@@ -2734,7 +2758,7 @@ function renderPbFunnel(){
     <td style="font-size:11px;color:var(--muted);">${esc(s.bench)}</td>
     <td><span class="badge badge-muted">${esc(s.src)}</span></td>
   </tr>`).join('');
-  el.innerHTML=`<div class="card">
+  el.innerHTML=linkCard+`<div class="card">
     <div style="font-weight:700;font-size:14px;margin-bottom:4px;"><i class="fa fa-filter" style="color:var(--purple);"></i> Phễu 6 bước — Hành trình khách hàng</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Mỗi pain/angle nên gắn đúng 1 bước phễu. Bước 5 (Dẫn về) là chỗ bị bỏ qua nhiều nhất.</div>
     <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Bước</th><th>Khách đang làm</th><th>Nhiệm vụ của bạn</th><th>Tool đo</th><th>Benchmark</th><th>Nguồn</th></tr></thead><tbody>${rows}</tbody></table></div>
