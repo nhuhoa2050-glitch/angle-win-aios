@@ -1477,7 +1477,7 @@ async function aiGenerateHook(btn){
   if(!p2){ alert('Hãy điền P2 — Pain Point trước khi tạo hook (đây là phần quan trọng nhất).'); return false; }
   const hookEl=document.getElementById('b2-hook');
   const ctx={p1,p2,p3,p4,p5,p6};
-  if(getLLMSettings().key){
+  if(aiAvailable()){
     const old=btn?btn.innerHTML:''; if(btn){btn.innerHTML='<i class="fa fa-spinner fa-spin"></i> Đang viết...';btn.disabled=true;}
     try{
       const sys=`Bạn là copywriter TikTok Shop. Viết 1 hook (0-3 giây) bám công thức ${RBL_KB.hookFormula}, chạm đúng nỗi đau, tự nhiên, KHÔNG sáo rỗng, KHÔNG để placeholder. Chỉ trả về DUY NHẤT 1 dòng hook.\n${RBL_KB_PROMPT}`;
@@ -2003,7 +2003,7 @@ async function classifyAndRouteComments(){
   if(!S.intentBank) S.intentBank=[];
   if(!S.praiseBank) S.praiseBank=[];
   let res=null;
-  if(getLLMSettings().key){
+  if(aiAvailable()){
     const prof=S.productProfile||{};
     const items=rows.map((r,i)=>({i,text:(r.message||r.pain||'').slice(0,200)}));
     const sys=`Bạn là bộ lọc bình luận TikTok Shop. Phân loại mỗi bình luận:
@@ -2110,7 +2110,10 @@ async function llmCall(system, user, maxTokens){
   const s=getLLMSettings();
   const order=[];
   if(LLM_PROVIDERS[s.provider] && s.key) order.push([s.provider,s.model,s.key]);
-  for(const [pk,kv] of Object.entries(s.keys||{})){ // dự phòng: provider khác đã lưu key
+  // Tự fallback: ưu tiên model FREE (Gemini → Groq → OpenRouter) rồi mới trả phí
+  const FALLBACK_ORDER=['gemini','groq','openrouter','openai','anthropic'];
+  for(const pk of FALLBACK_ORDER){
+    const kv=(s.keys||{})[pk];
     if(pk!==s.provider && kv && LLM_PROVIDERS[pk]) order.push([pk,LLM_PROVIDERS[pk].models[0],kv]);
   }
   for(let i=0;i<order.length;i++){
@@ -2118,16 +2121,19 @@ async function llmCall(system, user, maxTokens){
     try{ return await LLM_PROVIDERS[pk].call(key,model,system,user,maxTokens); }
     catch(e){ console.warn('[llm fallback]',pk,e.message); if(i===order.length-1 && !window.AIOS_CONFIG?.n8nUrl) {/* để rơi xuống n8n/offline */} }
   }
+  // n8n fallback → dùng webhook Gemini đang SỐNG (aios-analytics-chat), không phải aios-ai-task (chưa active)
   const c=window.AIOS_CONFIG||{};
-  const n8n = c.n8nUrl ? c.n8nUrl + (c.aiTaskPath||'/webhook/aios-ai-task') : null;
+  const n8n = c.n8nUrl ? c.n8nUrl + (c.aiTaskPath || c.analyticsChat || '/webhook/aios-analytics-chat') : null;
   if(n8n){
     try{ const res=await fetch(n8n,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system,user,workspace_id:currentWS?.id||'default'})});
+      body:JSON.stringify({question:system+'\n\nYÊU CẦU:\n'+user, system, user, context:{}, workspace_id:currentWS?.id||'default'})});
       const d=await res.json(); return d.answer||d.text||''; }catch(e){ console.warn('[llm n8n]',e.message); }
   }
   return null;
 }
 async function aiosLLM(system, user, maxTokens){ return llmCall(system, user, maxTokens); }
+// AI có sẵn không? = có browser key HOẶC có n8n webhook (Gemini đang sống)
+function aiAvailable(){ return !!getLLMSettings().key || !!(window.AIOS_CONFIG && window.AIOS_CONFIG.n8nUrl); }
 
 // ---- Modal chọn model ----
 function updateLLMLabel(){ const el=document.getElementById('llm-active-label'); if(el)el.textContent=llmActiveLabel(); }
@@ -2146,8 +2152,10 @@ function onLLMProviderChange(){
   const prov=LLM_PROVIDERS[p];
   document.getElementById('llm-model').innerHTML=prov.models.map(m=>`<option value="${m}">${m}</option>`).join('');
   document.getElementById('llm-key-hint').textContent='('+prov.keyHint+')';
-  document.getElementById('llm-help').innerHTML = prov.free ? '🆓 Nhà cung cấp có gói miễn phí.' : '💳 Cần tài khoản trả phí.';
   const s=getLLMSettings();
+  const saved=['gemini','groq','openrouter','openai','anthropic'].filter(k=>(s.keys||{})[k]);
+  const chain = saved.length ? ('Auto-fallback đang bật: '+saved.map(k=>LLM_PROVIDERS[k].label.split(' (')[0].split(' —')[0]).join(' → ')) : 'Lưu key cho ≥2 provider để bật auto-fallback (vd Gemini lỗi → Groq).';
+  document.getElementById('llm-help').innerHTML = (prov.free ? '🆓 Có gói miễn phí. ' : '💳 Cần tài khoản trả phí. ') + '<br><span style="color:var(--cyan);">🔁 '+chain+'</span>';
   document.getElementById('llm-key').value = (s.keys[p]||'');
 }
 async function testLLM(btn){
@@ -4117,7 +4125,7 @@ const _localGenerateQueue = generateQueue;
 // MODULE B: dùng SSE — cập nhật trạng thái "suy nghĩ" của AI ngay trên nút bấm
 generateQueue = async function(){
   if(!requireWs() || !requireEditor()) return;
-  if(getLLMSettings().key){ return generateQueueLLM(); }  // ưu tiên model đã chọn (Claude/GPT/Gemini/Groq/OpenRouter)
+  if(aiAvailable()){ return generateQueueLLM(); }  // dùng AI thật (browser model hoặc Gemini qua n8n)
   if(!AIOS.online){ return _localGenerateQueue(); }
   const btn = document.getElementById('btn-generate');
   const orig = btn ? btn.innerHTML : '';
@@ -4283,7 +4291,7 @@ async function researchAI(){
   const reset=()=>{ if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa fa-brain"></i> AI Research + Phân tích'; } };
 
   try{
-    if(getLLMSettings().key){
+    if(aiAvailable()){
       const prof = S.productProfile||{};
       const sys = `Bạn là chuyên gia insight TikTok Shop. Từ tên sản phẩm/niche, SUY LUẬN (không phải số liệu thật) các pain point khách thường gặp. Ngôn ngữ: ${lang}. Góc tập trung: ${angles.join(', ')||'pain points'}.
 Trả về DUY NHẤT JSON: {"pains":[{"pain_text":"...","category":"skin|other","frequency":1-10,"urgency":1-5,"keywords":["..."]}]}
